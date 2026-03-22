@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cmake",
+            "label": "build",
+            "command": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "CMake template build task"
+        },
+        {
+            "label": "build_layout_sandbox",
+            "type": "cmake",
+            "command": "build",
+            "targets": [
+                "LayoutSandbox" // Assumes your standalone target is named this in CMake
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Build the LayoutSandbox."
+        },
+    ]
+}

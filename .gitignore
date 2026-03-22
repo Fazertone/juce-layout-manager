@@ -1,0 +1,359 @@
+# Build directories
+build/
+.cache/
+out/
+Debug/
+Release/
+x64/
+x86/
+Win32/
+bin/
+obj/
+Installers/
+files/
+CLAUDE.md
+
+.DS_Store
+
+InstallerBuilder/account_details.txt
+InstallerBuilder/build/
+InstallerBuilder/output/
+
+Tests/output/
+
+local_env.bat
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+compile_commands.json
+build.ninja
+*.ninja
+CTestTestfile.cmake
+CMakeSettings.json
+.cmake/
+
+*.wav
+*.python-version
+
+# Visual Studio / MSBuild
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.sbr
+*.sdf
+*.opensdf
+*.unsuccessfulbuild
+ipch/
+*.idb
+*.pgc
+*.pgd
+*.rsp
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.tlog/
+*.lastbuildstate
+*.iobj
+*.ipdb
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Code::Blocks
+*.layout
+*.depend
+
+# CodeLite
+*.workspace
+*.project
+
+# Qt Creator
+CMakeLists.txt.user*
+
+# KDevelop
+*.kdev4
+
+# Eclipse CDT
+.metadata
+.project
+.cproject
+.settings/
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+cmake-build-*/
+
+# CLion
+.clion.cmake/
+
+# Conan
+conanfile.txt.timestamp*
+conan.lock
+conanbuildinfo.*
+conaninfo.txt
+graph_info.json
+
+# vcpkg
+vcpkg_installed/
+.vcpkg-root
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# JUCE specific
+Builds/
+JuceLibraryCode/
+*_artefacts/
+
+# Audio plugin formats (built artifacts)
+*.vst
+*.vst3
+*.au
+*.aax
+*.rtas
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Backup files
+*.bak
+*.gho
+*.ori
+*.orig
+*.tmp
+*~
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# node_modules (in case you use any Node.js tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Python (in case you use Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Local environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor temporary files
+*~
+.#*
+\#*#
+.*.sw[a-z]
+*.un~
+Session.vim
+.netrwhist
+
+# Tags
+tags
+TAGS
+
+# ctags
+.tags
+.tags1
+
+# cscope files
+cscope.files
+cscope.out
+cscope.in.out
+cscope.po.out
+
+# GNU Global
+GPATH
+GRTAGS
+GSYMS
+GTAGS
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+.org-id-locations
+*_archive
+*_flymake.*
+/eshell/history
+/eshell/lastdir
+/elpa/
+*.rel
+
+# SublimeText
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# JetBrains
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Local configuration files
+*.local
+config.json
+settings.json
+.vscode/settings.json
+
+# Test results
+test-results/
+TestResults/
+
+# BenchmarkDotNet artifacts
+BenchmarkDotNet.Artifacts/
+
+# Ionide (F#) and Rider
+.ionide/
+.idea/
+
+# Fody - auto-generated XML schema
+FodyWeavers.xsd
+.aider*

@@ -1,0 +1,157 @@
+<?xml version="1.0" ?>
+<JUCELayout>
+  <Components/>
+  <Object name="meaw_chainer_frame" x="905" y="367" width="1200" height="647">
+    <Object name="main_component" x="0" y="0" width="1200" height="647">
+      <Rectangle name="background" x="0" y="0" width="1200" height="647" fillColour="#ffe57f7f"/>
+    </Object>
+    <Object name="preset_name_holder" x="264" y="114" width="383" height="60">
+      <ImageButton name="undo_preset_img_btn" x="199" y="4" width="19" height="19">
+        <Object name="undo_preset_img_btn_asset" x="0" y="0" width="19" height="19"/>
+      </ImageButton>
+      <ImageButton name="redo_preset_img_btn" x="234" y="4" width="19" height="19">
+        <Object name="redo_preset_img_btn_asset" x="0" y="0" width="19" height="19"/>
+      </ImageButton>
+      <Label name="preset_name_big" x="0" y="30" width="383" height="30" fillColour="#ffeeeeee" strokeColour="#ff303030" strokeWeight="1.0" text="Psychedelic Tone" fontName="Unbounded" fontType="Medium" fontSize="24" textAlignVertical="center"/>
+      <Line name="Line 15" x="185" y="0" width="0" height="24" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <ImageButton name="eraser_img_btn" x="152" y="3" width="20" height="19">
+        <Object name="eraser_img_btn_asset" x="0" y="0" width="20" height="19"/>
+      </ImageButton>
+      <Object name="preset_creator" x="0" y="3" width="90" height="20">
+        <Image name="ai_created_img" x="0" y="0" width="90" height="20">
+          <Object name="ai_created_img" x="0" y="0" width="90" height="20"/>
+        </Image>
+        <Image name="user_preset_img" x="0" y="0" width="90" height="20">
+          <Object name="user_preset_img" x="0" y="0" width="90" height="20"/>
+        </Image>
+      </Object>
+    </Object>
+    <Object name="Chatbox" x="0" y="93" width="246" height="554">
+      <Rectangle name="Rectangle 4728" x="0" y="0" width="246" height="554" fillColour="#ffe49b9b"/>
+      <TextEditor name="prompt_multiline_text_editor" x="12" y="472" width="194" height="69" multiline="true">
+        <TextEditorEntry name="text_editor_entry" x="0" y="0" width="194" height="69" fillColour="#ff303030" text="Give me a cool preset with a lot of crunch. Table impala style." fontName="Inter" fontSize="10" textAlignVertical="top"/>
+        <TextEditorSuggestion name="text_editor_suggestion" x="0" y="0" width="194" height="69" fillColour="#ff303030" text="What do you want to create?" fontName="Inter" fontSize="10" textAlignVertical="top"/>
+      </TextEditor>
+      <ImageButton name="chatbox_close_img_btn" x="221" y="15" width="9" height="7">
+        <Object name="Arrow 3 (Stroke)" x="9" y="7" width="9" height="7" fillColour="#ff303030"/>
+      </ImageButton>
+      <Line name="Line 6" x="0" y="462" width="246" height="0" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <Object name="Frame 1000001055" x="216" y="468" width="23" height="23" cornerRadius="6" fill-gradient-type="linear" fill-gradient-start="0.473,1.0" fill-gradient-end="0.0,0.485" fill-gradient-stops="#ffff0004:0.0,#ffbc3ce2:0.33,#ff31c49f:0.663,#ffffdd00:1.0" stroke-gradient-type="linear" stroke-gradient-start="0.473,1.0" stroke-gradient-end="0.0,0.485" stroke-gradient-stops="#ffff0072:0.0,#ff3ca0e2:0.351,#ffc4a931:0.75,#ff998c00:1.0" strokeWeight="1.0"/>
+      <ImageButton name="send_prompt_img_btn" x="216" y="469" width="23" height="23">
+        <Object name="Frame 1000001054" x="0" y="0" width="23" height="23" cornerRadius="8" fillColour="#ffffffff" stroke-gradient-type="linear" stroke-gradient-start="0.002,0.543" stroke-gradient-end="0.479,0.023" stroke-gradient-stops="#ffffc700:0,#ffffc800:0.25,#ffd05757:0.25,#ffd05656:0.5,#ff00b6ff:0.5,#ff00b7ff:0.75,#ff00ff90:0.75,#ff00ff90:1.0" strokeWeight="1.0">
+          <Object name="Arrow 2" x="12" y="17" width="11" height="0" strokeColour="#ff303030" strokeWeight="1.0"/>
+        </Object>
+        <Object name="Frame 1000001053" x="0" y="28" width="23" height="23" cornerRadius="6" strokeColour="#ff303030" strokeWeight="1.0">
+          <Object name="ai-star-icon-artificial-intelligence-logo-vector-52697153 copy 3" x="6" y="4" width="12" height="15"/>
+        </Object>
+      </ImageButton>
+      <Image name="chain_it_img" x="14" y="11" width="184" height="16">
+        <Object name="Group 1000001071" x="0" y="0" width="14" height="16">
+          <Object name="Star 1" x="2" y="8" width="9" height="9" fillColour="#ff303030"/>
+          <Object name="Star 2" x="6" y="0" width="8" height="8" fillColour="#ff303030"/>
+          <Object name="Star 3" x="0" y="4" width="4" height="4" fillColour="#ff303030"/>
+        </Object>
+        <Label name="Make your dream chain" x="17" y="2" width="167" height="12" fillColour="#ff303030" text="Make your dream chain" fontName="Inter" fontType="Bold" fontSize="10" textAlignVertical="top"/>
+      </Image>
+      <Line name="Line 14" x="245" y="0" width="0" height="554" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <Object name="chat_viewport" x="4" y="75" width="237" height="382">
+        <Rectangle name="empty" x="0" y="0" width="237" height="382"/>
+      </Object>
+      <Image name="chat_placeholder_img" x="61" y="179" width="124" height="104">
+        <Object name="chat_placeholder_img_asset" x="0" y="0" width="124" height="104"/>
+      </Image>
+    </Object>
+    <Image name="meawchain_img" x="1037" y="110" width="150" height="29">
+      <Object name="Group 1000001087" x="0" y="5" width="143" height="24">
+        <Label name="meaw:Chain" x="0" y="0" width="143" height="24" fillColour="#ff303030" text="meaw:Chain" fontName="Unbounded" fontType="Light" fontSize="19" textAlignHorizontal="center" textAlignVertical="center"/>
+      </Object>
+      <Object name="Group 1000001088" x="139" y="0" width="11" height="13">
+        <Object name="Star 4" x="10" y="6" width="7" height="7" fillColour="#ff303030"/>
+        <Object name="Star 5" x="6" y="0" width="6" height="6" fillColour="#ff303030"/>
+        <Object name="Star 6" x="11" y="4" width="4" height="4" fillColour="#ff303030"/>
+      </Object>
+    </Image>
+    <Object name="TopMenu" x="0" y="0" width="1200" height="92">
+      <Line name="Line 9" x="1051" y="0" width="0" height="92" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <Line name="Line 11" x="222" y="0" width="0" height="92" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <Image name="safari_logo_img" x="121" y="25" width="80" height="42">
+        <Object name="safari_logo 1" x="0" y="0" width="80" height="42"/>
+      </Image>
+      <Line name="Line 10" x="100" y="0" width="0" height="92" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <RotarySlider name="input_level_rotary_slider" x="54" y="23" width="30" height="30" arcBgColour="#ffe59b9b" arcBgWidth="1.411" arcActiveColour="#ffeeeeee" arcActiveWidth="1.411" circleFillColour="#ffe59b9b" circleStrokeColour="#ffffffff" circleStrokeWidth="0.706"/>
+      <RotarySlider name="blend_rotary_slider" x="1071" y="23" width="30" height="30" arcBgColour="#ffe59b9b" arcBgWidth="1.411" arcActiveColour="#ffeeeeee" arcActiveWidth="1.411" circleFillColour="#ffe59b9b" circleStrokeColour="#ffffffff" circleStrokeWidth="0.706"/>
+      <RotarySlider name="output_level_rotary_slider" x="1116" y="23" width="30" height="30" arcBgColour="#ffe59b9b" arcBgWidth="1.411" arcActiveColour="#ffeeeeee" arcActiveWidth="1.411" circleFillColour="#ffe59b9b" circleStrokeColour="#ffffffff" circleStrokeWidth="0.706"/>
+      <Object name="output_meter_right" x="1179" y="6" width="6" height="76">
+        <Rectangle name="Rectangle 4713" x="0" y="0" width="6" height="76" cornerRadius="2" fillColour="#ff303030" strokeColour="#ff303030" strokeWeight="1.0"/>
+        <Rectangle name="Rectangle 4715" x="0" y="26" width="6" height="50" cornerRadius="37" fillColour="#ffeeeeee"/>
+      </Object>
+      <Object name="output_meter_left" x="1169" y="6" width="6" height="76">
+        <Rectangle name="Rectangle 4713" x="0" y="0" width="6" height="76" cornerRadius="2" fillColour="#ff303030" strokeColour="#ff303030" strokeWeight="1.0"/>
+        <Rectangle name="Rectangle 4715" x="0" y="26" width="6" height="50" cornerRadius="37" fillColour="#ffeeeeee"/>
+      </Object>
+      <Object name="input_meter_right" x="25" y="6" width="6" height="76">
+        <Rectangle name="Rectangle 4713" x="0" y="0" width="6" height="76" cornerRadius="2" fillColour="#ff303030" strokeColour="#ff303030" strokeWeight="1.0"/>
+        <Rectangle name="Rectangle 4715" x="0" y="26" width="6" height="50" cornerRadius="37" fillColour="#ffeeeeee"/>
+      </Object>
+      <Object name="input_meter_left" x="15" y="6" width="6" height="76">
+        <Rectangle name="Rectangle 4713" x="0" y="0" width="6" height="76" cornerRadius="2" fillColour="#ff303030" strokeColour="#ff303030" strokeWeight="1.0"/>
+        <Rectangle name="Rectangle 4715" x="0" y="26" width="6" height="50" cornerRadius="37" fillColour="#ffeeeeee"/>
+      </Object>
+      <Label name="input_label" x="53" y="58" width="32" height="14" fillColour="#ff303030" text="Input" fontName="Inter" fontType="Bold" fontSize="10" textAlignHorizontal="center" textAlignVertical="top"/>
+      <Label name="output_label" x="1113" y="58" width="36" height="14" fillColour="#ff303030" text="Output" fontName="Inter" fontType="Bold" fontSize="10" textAlignHorizontal="center" textAlignVertical="top"/>
+      <Label name="blend_label" x="1070" y="58" width="32" height="14" fillColour="#ff303030" text="Blend" fontName="Inter" fontType="Bold" fontSize="10" textAlignHorizontal="center" textAlignVertical="top"/>
+      <Rectangle name="preset_selector_bg_shadow" x="386" y="32" width="432" height="28" cornerRadius="8" fillColour="#ff303030"/>
+      <Rectangle name="preset_selector_bg" x="384" y="30" width="432" height="28" cornerRadius="8" fillColour="#ffeeeeee" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <Label name="preset_name_label" x="402" y="34" width="324" height="20" fillColour="#ff303030" text="Psychedelic Tone" fontName="Inter" fontType="Medium" fontSize="10" textAlignHorizontal="center" textAlignVertical="center"/>
+      <ImageButton name="prev_preset_img_btn" x="747" y="36" width="8" height="5">
+        <Object name="Polygon 2" x="0" y="5" width="8" height="5" fillColour="#ff303030"/>
+      </ImageButton>
+      <ImageButton name="next_preset_img_btn" x="747" y="48" width="8" height="5">
+        <Object name="Polygon 1" x="0" y="0" width="8" height="5" fillColour="#ff303030"/>
+      </ImageButton>
+      <ImageButton name="save_preset_img_btn" x="771" y="39" width="11" height="11">
+        <Object name="save_preset_img_btn_normal" x="0" y="0" width="11" height="11" fillColour="#ff303030"/>
+      </ImageButton>
+      <ImageButton name="delete_preset_img_btn" x="796" y="39" width="10" height="11">
+        <Object name="delete" x="0" y="0" width="10" height="11" fillColour="#ff303030"/>
+      </ImageButton>
+      <Line name="Line 11" x="738" y="31" width="0" height="27" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <Line name="Line 12" x="763" y="31" width="0" height="27" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <Line name="Line 13" x="788" y="31" width="0" height="27" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <Line name="Line 7" x="0" y="92" width="1200" height="0" strokeColour="#ff303030" strokeWeight="1.0"/>
+      <ImageButton name="load_preset_img_btn" x="341" y="30" width="30" height="30">
+        <Object name="load_preset_img_btn_ON" x="0" y="0" width="30" height="30"/>
+        <Object name="load_preset_img_btn_OFF" x="0" y="0" width="30" height="30"/>
+      </ImageButton>
+      <ImageButton name="on_toggle_img_btn" x="273" y="30" width="44" height="30" isToggleable="true">
+        <Object name="on_toggle_img_btn_ON" x="0" y="0" width="44" height="30"/>
+        <Object name="on_toggle_img_btn_OFF" x="0" y="0" width="44" height="30"/>
+      </ImageButton>
+      <ImageButton name="autogain_toggle_img_btn" x="936" y="30" width="89" height="30" isToggleable="true">
+        <Object name="autogain_toggle_img_btn_OFF" x="0" y="0" width="89" height="30"/>
+        <Object name="autogain_toggle_img_btn_ON" x="0" y="0" width="89" height="30"/>
+      </ImageButton>
+      <ImageButton name="oversampling_toggle_img_btn" x="831" y="29" width="94" height="30" isToggleable="true">
+        <Object name="oversampling_toggle_img_btn_OFF" x="0" y="0" width="94" height="30"/>
+        <Object name="oversampling_toggle_img_btn_ON" x="0" y="0" width="94" height="30"/>
+      </ImageButton>
+    </Object>
+    <Object name="subcomponent" x="246" y="181" width="954" height="386">
+      <Rectangle name="empty" x="0" y="0" width="954" height="386"/>
+    </Object>
+    <Object name="dock" x="246" y="567" width="953" height="80">
+      <Rectangle name="empty" x="0" y="0" width="953" height="80"/>
+    </Object>
+    <Object name="dock" x="246" y="568" width="954" height="59">
+      <Rectangle name="empty_frame" x="0" y="0" width="954" height="59"/>
+      <Rectangle name="empty_square_holder" x="462" y="24" width="30" height="30"/>
+      <Rectangle name="empty_label_bounds" x="452" y="0" width="50" height="20"/>
+    </Object>
+    <Object name="plugin_list" x="1037" y="174" width="150" height="381">
+      <Rectangle name="empty" x="0" y="0" width="150" height="381"/>
+    </Object>
+    <Image name="safari_audio_placeholder_img" x="634" y="284" width="208" height="174">
+      <Object name="safari_audio_placeholder_img_asset" x="0" y="0" width="208" height="174"/>
+    </Image>
+  </Object>
+</JUCELayout>

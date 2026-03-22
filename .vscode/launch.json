@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        // {
+        //     "name": "(Windows) Sandbox Launcher",
+        //     "type": "cppvsdbg",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder}/build/LayoutSandbox_artefacts/Debug/Standalone/LayoutSandbox.exe",
+        //     "args": [],
+        //     "stopAtEntry": false,
+        //     "cwd": "${workspaceFolder}/build/LayoutSandbox_artefacts/Debug",
+        //     "environment": [],
+        //     "preLaunchTask": "build_layout_sandbox",
+        //     "console": "internalConsole"
+        // },
+        {
+            "name": "(Mac) Sandbox Launcher (CodeLLDB)",
+            "type": "lldb",  // <--- CHANGED from cppdbg
+            "request": "launch",
+            "program": "${workspaceFolder}/build/LayoutSandbox_artefacts/Debug/LayoutSandbox.app/Contents/MacOS/LayoutSandbox",
+            "args": [],
+            "cwd": "${workspaceFolder}/build/LayoutSandbox_artefacts/Debug",
+            "preLaunchTask": "build_layout_sandbox",
+            "console": "internalConsole"
+            // Remove "MIMode" and "MIModePath" as they are not needed for CodeLLDB
+        }
+    ]
+}
