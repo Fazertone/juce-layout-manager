@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.22)
 
 project(LayoutSandbox VERSION 0.0.1)
 
+# When consumed via FetchContent/add_subdirectory, skip the sandbox app —
+# consumers only need the layout_manager JUCE module in the layout_manager/ dir.
+if(NOT PROJECT_IS_TOP_LEVEL)
+    return()
+endif()
+
 add_definitions(-w)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -57,7 +63,7 @@ target_link_libraries(LayoutSandbox
     PRIVATE
         LayoutSandboxAssets
         juce::juce_gui_basics
-        juce::juce_audio_processors 
+        juce::juce_audio_processors
         layout_manager
         melatonin_blur
     PUBLIC
