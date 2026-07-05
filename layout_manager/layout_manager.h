@@ -33,3 +33,4 @@
 #include "internal/LMLookAndFeel.h"
 #include "internal/CustomComponents.h"
 #include "internal/Inspector.h"
+#include "internal/SpriteSheet.h"

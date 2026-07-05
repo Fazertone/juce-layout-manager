@@ -5,3 +5,4 @@
 #include "internal/LMLookAndFeel.cpp"
 #include "internal/CustomComponents.cpp"
 #include "internal/Inspector.cpp"
+#include "internal/SpriteSheet.cpp"
