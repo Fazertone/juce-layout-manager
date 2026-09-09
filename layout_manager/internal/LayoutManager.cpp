@@ -1,7 +1,7 @@
 #include "LayoutManager.h"
 #include "LMLookAndFeel.h"
 
-RegisteredComponent::RegisteredComponent(juce::Component* component, juce::String name) : component(component), name(name){}
+RegisteredComponent::RegisteredComponent(juce::Component* component, juce::String name) : component(component), safeComponent(component), name(name){}
 RegisteredComponent::~RegisteredComponent(){}
 
 
@@ -48,14 +48,19 @@ LayoutManager::LayoutManager(const char* xmlData, size_t xmlDataSize)
     : scaling(1.0f), layoutTree("JUCELayout"), layoutLoaded(false)
 {
     std::unique_ptr<juce::XmlElement> xml = juce::parseXML (xmlData);
-    loadFromXml(*xml);
+    if (xml != nullptr)
+        loadFromXml(*xml);
 }
 
 
 // Destructor
 LayoutManager::~LayoutManager()
 {
-    // Now it's safe for the OwnedArray to delete the look and feel objects
+    layoutTree.removeListener (this);
+    for (const auto& binding : lookAndFeelBindings)
+        if (binding.component != nullptr && &binding.component->getLookAndFeel() == binding.lookAndFeel)
+            binding.component->setLookAndFeel (nullptr);
+    // Detach only look-and-feels we installed on components that are still alive.
     buttonLookAndFeels.clear();
     registeredTypefaces.clear();
 }
@@ -177,6 +182,15 @@ bool LayoutManager::loadFromXml(const juce::XmlElement& xmlData)
     }
     
     // Clear existing layout data
+    layoutTree.removeListener (this);
+    paintedEffects.clear();
+    for (auto* laf : buttonLookAndFeels)
+    {
+        laf->labelEffects.setSource ({});
+        laf->circleEffects.setSource ({});
+        laf->arcActiveEffects.setSource ({});
+        laf->arcBgEffects.setSource ({});
+    }
     layoutTree.removeAllChildren(nullptr);
     layoutLoaded = false;
     
@@ -186,6 +200,9 @@ bool LayoutManager::loadFromXml(const juce::XmlElement& xmlData)
         layoutLoaded = layoutTree.isValid();
         if (layoutLoaded)
         {
+            layoutTree.addListener (this);
+            applyLayout();
+            repaintEffects();
             //DBG("LayoutManager: Successfully loaded " + juce::String(layoutTree.getNumChildren()) + " components");
             // print the layoutTree output
            // DBG("LayoutManager: LayoutTree: " + layoutTree.toXmlString());
@@ -408,7 +425,8 @@ void LayoutManager::registerComponent(juce::Component* component, juce::String n
 void LayoutManager::applyResize(){
     // for all components
     for (int i = 0; i < registeredComponents.size(); i++){
-        setPosition(registeredComponents[i]);
+        if (registeredComponents[i].safeComponent != nullptr)
+            setPosition(registeredComponents[i]);
     }
 
     applyLayout();
@@ -417,6 +435,8 @@ void LayoutManager::applyResize(){
 void LayoutManager::applyLayout(){
     // for all components
     for (int i = 0; i < registeredComponents.size(); i++){
+        if (registeredComponents[i].safeComponent == nullptr)
+            continue;
         // get the layout data
         juce::ValueTree elementData = findChildByName(registeredComponents[i].name, layoutTree);
 
@@ -463,6 +483,7 @@ void LayoutManager::setLabelLayout(juce::Component*component, const juce::ValueT
         return;
     }
 
+    configureLabelEffects (*label, elementData);
     label->setBorderSize(juce::BorderSize<int>(0));
     label->setMinimumHorizontalScale(1.0f);
 
@@ -557,7 +578,7 @@ void LayoutManager::setAttribute(const juce::String& componentName, const juce::
     juce::Component* component = nullptr;
     for (const auto& regComp : registeredComponents)
     {
-        if (regComp.name == componentName)
+        if (regComp.safeComponent != nullptr && regComp.name == componentName)
         {
             component = regComp.component;
             break;
@@ -566,7 +587,7 @@ void LayoutManager::setAttribute(const juce::String& componentName, const juce::
 
     if (component == nullptr)
     {
-        DBG("LayoutManager: Component '" + componentName + "' not found in registered components");
+        // Painted primitives/effects are valid XML targets without a registered Component.
         return;
     }
 
@@ -750,8 +771,7 @@ void LayoutManager::setTextButtonLayout(juce::Component* component, const juce::
     }
 
     // Create and configure a FurnaceLookAndFeel for this button
-    auto* laf = new LMLookAndFeel();
-    buttonLookAndFeels.add(laf);
+    auto* laf = createLookAndFeel (component);
 
     // Set corner radius from the parent element or btn_bg
     if (elementData.hasProperty("cornerRadius"))
@@ -860,8 +880,7 @@ void LayoutManager::setTextEditorLayout(juce::Component* component, const juce::
     juce::ValueTree txtBoxSuggestion = findChildByName("text_editor_suggestion", elementData);
 
     // Create and configure a FurnaceLookAndFeel for this text editor
-    auto* laf = new LMLookAndFeel();
-    buttonLookAndFeels.add(laf);
+    auto* laf = createLookAndFeel (component);
 
     // Set corner radius from the parent element or txt_box_bg
     if (elementData.hasProperty("cornerRadius"))
@@ -1035,8 +1054,7 @@ void LayoutManager::setComboBoxLayout(juce::Component* component, const juce::Va
     }
 
     // Create and configure a LookAndFeel for this combo box
-    auto* laf = new LMLookAndFeel();
-    buttonLookAndFeels.add(laf);
+    auto* laf = createLookAndFeel (component);
 
     // Set corner radius from the parent element or btn_bg
     if (elementData.hasProperty("cornerRadius"))
@@ -1208,20 +1226,33 @@ void LayoutManager::setRotarySliderLayout(juce::Component* component, const juce
         return;
     }
 
-    // Create a new LookAndFeel instance for this rotary slider
-    auto* laf = new LMLookAndFeel();
-    buttonLookAndFeels.add(laf);
+    slider->setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+
+    // Retain the look-and-feel and its effect caches across layout applications.
+    auto* laf = createLookAndFeel (component, true);
+    laf->effectScale = scaling;
+    laf->sliderLayout = {};
+    laf->setRotarySliderCircleFillColour (juce::Colours::transparentBlack);
+    laf->setRotarySliderCircleStrokeColour (juce::Colours::transparentBlack);
+    laf->setRotarySliderCircleStrokeWidth (0.0f);
+    laf->setRotarySliderArcActiveColour (juce::Colours::transparentBlack);
+    laf->setRotarySliderArcActiveWidth (0.0f);
+    laf->setRotarySliderArcBgColour (juce::Colours::transparentBlack);
+    laf->setRotarySliderArcBgWidth (0.0f);
 
     // get slider widget child
     juce::ValueTree sliderWidget = findChildByName("slider_widget", elementData);
     juce::ValueTree sliderValueText = findChildByName("slider_value_text", elementData);
 
+    laf->circleEffects.setSource (sliderWidget, "circle");
+    laf->arcActiveEffects.setSource (sliderWidget, "arcActive");
+    laf->arcBgEffects.setSource (sliderWidget, "arcBg");
     if (sliderWidget.isValid()){
         // set the sliderLayout.sliderBounds
         if (sliderWidget.hasProperty("x") && sliderWidget.hasProperty("y") && sliderWidget.hasProperty("width") && sliderWidget.hasProperty("height")){
-            juce::Rectangle<int> sliderBounds(sliderWidget.getProperty("x").toString().getFloatValue(), sliderWidget.getProperty("y").toString().getFloatValue(), sliderWidget.getProperty("width").toString().getFloatValue(), sliderWidget.getProperty("height").toString().getFloatValue());
+            juce::Rectangle<float> sliderBounds(sliderWidget.getProperty("x").toString().getFloatValue(), sliderWidget.getProperty("y").toString().getFloatValue(), sliderWidget.getProperty("width").toString().getFloatValue(), sliderWidget.getProperty("height").toString().getFloatValue());
             DBG("SliderBounds: " + sliderBounds.toString());
-            laf->sliderLayout.sliderBounds = sliderBounds;
+            laf->sliderLayout.sliderBounds = (sliderBounds * scaling).toNearestInt();
         }
         // Set circle fill colour if specified
         if (sliderWidget.hasProperty("circleFillColour"))
@@ -1277,9 +1308,9 @@ void LayoutManager::setRotarySliderLayout(juce::Component* component, const juce
 
     if (sliderValueText.isValid()){
         if (sliderValueText.hasProperty("x") && sliderValueText.hasProperty("y") && sliderValueText.hasProperty("width") && sliderValueText.hasProperty("height")){
-            juce::Rectangle<int> textBoxBounds(sliderValueText.getProperty("x").toString().getFloatValue(), sliderValueText.getProperty("y").toString().getFloatValue(), sliderValueText.getProperty("width").toString().getFloatValue(), sliderValueText.getProperty("height").toString().getFloatValue());
+            juce::Rectangle<float> textBoxBounds(sliderValueText.getProperty("x").toString().getFloatValue(), sliderValueText.getProperty("y").toString().getFloatValue(), sliderValueText.getProperty("width").toString().getFloatValue(), sliderValueText.getProperty("height").toString().getFloatValue());
             DBG("TextBoxBounds: " + textBoxBounds.toString());
-            laf->sliderLayout.textBoxBounds = textBoxBounds;
+            laf->sliderLayout.textBoxBounds = (textBoxBounds * scaling).toNearestInt();
         }
         // <SliderValueText name="slider_value_text" x="15.098" y="2.444" width="20.0" height="6.0" fillColour="#ffcfcfcf" text="1000 Hz" fontName="Wix Madefor Text" fontSize="5" textAlignVertical="center"/>
 
@@ -1310,6 +1341,10 @@ void LayoutManager::paintComponent(juce::Graphics& g, juce::String componentID){
         {
             paintRectangle(g, child);
         }
+        else if (childType == "Ellipse")
+        {
+            paintEllipse (g, child);
+        }
         else if (childType == "Line")
         {
             paintLine(g, child);
@@ -1334,6 +1369,14 @@ void LayoutManager::paintRectangle(juce::Graphics& g, const juce::ValueTree& rec
     
     juce::Rectangle<float> rect(x, y, width, height);
     
+    juce::Path shape;
+    shape.addRoundedRectangle (rect, juce::jmax (0.0f, cornerRadius));
+    if (rectData.hasProperty ("fillColour") || rectData.hasProperty ("fill-gradient-type"))
+        effectsFor (rectData).render (g, shape, scaling, opacity);
+    else if (rectData.hasProperty ("strokeColour"))
+        effectsFor (rectData).render (g, shape, juce::PathStrokeType (
+            (float) rectData.getProperty ("strokeWeight", 1.0f) * scaling), scaling, opacity);
+
     // Check for gradient fill
     if (rectData.hasProperty("fill-gradient-type"))
     {
@@ -1459,6 +1502,10 @@ void LayoutManager::paintLine(juce::Graphics& g, const juce::ValueTree& lineData
     
     // Draw line from (x,y) to (x+width, y+height)
     juce::Line<float> line(x, y, x + width, y + height);
+    juce::Path path;
+    path.startNewSubPath (line.getStart());
+    path.lineTo (line.getEnd());
+    effectsFor (lineData).render (g, path, juce::PathStrokeType (strokeWidth), scaling, opacity);
     g.drawLine(line, strokeWidth);
 }
 
@@ -1532,5 +1579,142 @@ void LayoutManager::paintAutoLabel(juce::Graphics& g, const juce::ValueTree& lab
     // Draw the text
     juce::Rectangle<int> textBounds(x, y, width, height);
     // max 32 lines, arbitrary value
+    auto& effects = effectsFor (labelData);
+    if (! effects.isEmpty())
+    {
+        juce::GlyphArrangement glyphs;
+        glyphs.addFittedText (font, text, (float) textBounds.getX(), (float) textBounds.getY(),
+                             (float) textBounds.getWidth(), (float) textBounds.getHeight(), justification, 32, 1.0f);
+        effects.render (g, glyphs, scaling, opacity);
+    }
     g.drawFittedText(text, textBounds, justification, 32, 1.0);
+}
+
+std::vector<LMShadowStyle> LayoutManager::getEffects (const juce::String& name, const juce::String& target) const
+{
+    return LMEffectRenderer::readEffects (findChildByName (name, layoutTree), target);
+}
+
+LMLookAndFeel* LayoutManager::createLookAndFeel (juce::Component* component, bool reuse)
+{
+    if (reuse)
+        for (const auto& binding : lookAndFeelBindings)
+            if (binding.component == component)
+                return binding.lookAndFeel;
+    auto* laf = new LMLookAndFeel();
+    buttonLookAndFeels.add (laf);
+    lookAndFeelBindings.push_back ({ component, laf });
+    return laf;
+}
+
+LMEffectRenderer& LayoutManager::effectsFor (const juce::ValueTree& node)
+{
+    for (const auto& entry : paintedEffects)
+        if (entry->node == node)
+            return entry->renderer;
+    auto entry = std::make_unique<PaintedEffect>();
+    entry->node = node;
+    entry->renderer.setSource (node);
+    paintedEffects.push_back (std::move (entry));
+    return paintedEffects.back()->renderer;
+}
+
+void LayoutManager::repaintEffects()
+{
+    for (const auto& registered : registeredComponents)
+        if (registered.safeComponent != nullptr)
+        {
+            registered.component->repaint();
+            if (auto* parent = registered.component->getParentComponent())
+                parent->repaint();
+        }
+}
+
+void LayoutManager::valueTreeChildRemoved (juce::ValueTree& parent, juce::ValueTree& child, int)
+{
+    if (child.hasType ("Effects"))
+        refreshLabelEffects (parent);
+    // Keep effect lists alive while their listeners finish the current callback.
+    // Prune removed painted elements; effect-list edits retain the renderer cache.
+    if (! child.hasType ("Effects") && ! child.hasType ("DropShadow"))
+        paintedEffects.erase (std::remove_if (paintedEffects.begin(), paintedEffects.end(),
+            [&child] (const auto& item) { return item->node == child || item->node.isAChildOf (child); }),
+            paintedEffects.end());
+    repaintEffects();
+}
+
+void LayoutManager::paintEllipse (juce::Graphics& g, const juce::ValueTree& node)
+{
+    juce::Rectangle<float> bounds ((float) node.getProperty ("x", 0.0f) * scaling,
+                                   (float) node.getProperty ("y", 0.0f) * scaling,
+                                   (float) node.getProperty ("width", 0.0f) * scaling,
+                                   (float) node.getProperty ("height", 0.0f) * scaling);
+    if (bounds.isEmpty())
+        return;
+    const auto opacity = juce::jlimit (0.0f, 1.0f, (float) node.getProperty ("opacity", 1.0f));
+    const auto stroke = juce::PathStrokeType (juce::jmax (0.0f, (float) node.getProperty ("strokeWeight", 1.0f) * scaling));
+    juce::Path path;
+    path.addEllipse (bounds);
+    if (node.hasProperty ("fillColour"))
+    {
+        effectsFor (node).render (g, path, scaling, opacity);
+        g.setColour (juce::Colour::fromString (node["fillColour"].toString()).withMultipliedAlpha (opacity));
+        g.fillPath (path);
+    }
+    else if (node.hasProperty ("strokeColour"))
+        effectsFor (node).render (g, path, stroke, scaling, opacity);
+    if (node.hasProperty ("strokeColour"))
+    {
+        g.setColour (juce::Colour::fromString (node["strokeColour"].toString()).withMultipliedAlpha (opacity));
+        g.strokePath (path, stroke);
+    }
+}
+
+
+void LayoutManager::configureLabelEffects (juce::Label& label, const juce::ValueTree& node)
+{
+    bool hasEffectGroup = false;
+    for (const auto& child : node)
+        hasEffectGroup |= child.hasType ("Effects") && child.getProperty ("target").toString().isEmpty();
+    if (hasEffectGroup)
+    {
+        auto* laf = createLookAndFeel (&label, true);
+        laf->labelEffects.setSource (node);
+        laf->effectScale = scaling;
+        label.setLookAndFeel (laf);
+    }
+    else
+    {
+        // Leave pre-existing/custom styling alone when the label has not opted in.
+        for (const auto& binding : lookAndFeelBindings)
+            if (binding.component == &label && &label.getLookAndFeel() == binding.lookAndFeel)
+            {
+                binding.lookAndFeel->labelEffects.setSource ({});
+                label.setLookAndFeel (nullptr);
+            }
+    }
+}
+
+void LayoutManager::refreshLabelEffects (const juce::ValueTree& node)
+{
+    if (node.hasType ("Label"))
+        for (const auto& registered : registeredComponents)
+            if (registered.safeComponent != nullptr && registered.name == node.getProperty ("name").toString())
+                if (auto* label = dynamic_cast<juce::Label*> (registered.component))
+                    configureLabelEffects (*label, node);
+}
+
+void LayoutManager::valueTreeChildAdded (juce::ValueTree& parent, juce::ValueTree& child)
+{
+    if (child.hasType ("Effects"))
+        refreshLabelEffects (parent);
+    repaintEffects();
+}
+
+
+void LayoutManager::valueTreePropertyChanged (juce::ValueTree& node, const juce::Identifier& property)
+{
+    if (node.hasType ("Effects") && property == juce::Identifier ("target"))
+        refreshLabelEffects (node.getParent());
+    repaintEffects();
 }

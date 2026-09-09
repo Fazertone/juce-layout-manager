@@ -447,6 +447,28 @@ void LMLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width,
     auto centreY = (float)y + (float)height * 0.5f;
     auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
+    // Render all part effects first so they stay behind every piece of artwork.
+    if (rotarySliderArcBgWidth > 0.0f && ! rotarySliderArcBgColour.isTransparent())
+    {
+        juce::Path path;
+        path.addArc (centreX - outer_radius, centreY - outer_radius, outer_radius * 2.0f,
+                     outer_radius * 2.0f, angle, rotaryEndAngle, true);
+        arcBgEffects.render (g, path, juce::PathStrokeType (rotarySliderArcBgWidth), effectScale);
+    }
+    if (rotarySliderArcActiveWidth > 0.0f && ! rotarySliderArcActiveColour.isTransparent())
+    {
+        juce::Path path;
+        path.addArc (centreX - outer_radius, centreY - outer_radius, outer_radius * 2.0f,
+                     outer_radius * 2.0f, rotaryStartAngle, angle, true);
+        arcActiveEffects.render (g, path, juce::PathStrokeType (rotarySliderArcActiveWidth), effectScale);
+    }
+    juce::Path circle;
+    circle.addEllipse (centreX - inner_radius, centreY - inner_radius, inner_radius * 2.0f, inner_radius * 2.0f);
+    if (! rotarySliderCircleFillColour.isTransparent())
+        circleEffects.render (g, circle, effectScale);
+    else if (rotarySliderCircleStrokeWidth > 0.0f && ! rotarySliderCircleStrokeColour.isTransparent())
+        circleEffects.render (g, circle, juce::PathStrokeType (rotarySliderCircleStrokeWidth), effectScale);
+
     // Draw background arc (from current position to end) if specified
     if (rotarySliderArcBgWidth > 0.0f && rotarySliderArcBgColour.getAlpha() > 0)
     {
@@ -585,3 +607,28 @@ void SpriteKnobLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, in
     }
 }
 
+
+
+void LMLookAndFeel::drawLabel (juce::Graphics& g, juce::Label& label)
+{
+    if (labelEffects.isEmpty() || label.isBeingEdited())
+    {
+        juce::LookAndFeel_V4::drawLabel (g, label);
+        return;
+    }
+    g.fillAll (label.findColour (juce::Label::backgroundColourId));
+    const auto alpha = label.isEnabled() ? 1.0f : 0.5f;
+    const auto font = getLabelFont (label);
+    const auto area = getLabelBorderSize (label).subtractedFrom (label.getLocalBounds());
+    const auto lines = juce::jmax (1, (int) ((float) area.getHeight() / font.getHeight()));
+    juce::GlyphArrangement glyphs;
+    glyphs.addFittedText (font, label.getText(), (float) area.getX(), (float) area.getY(),
+                         (float) area.getWidth(), (float) area.getHeight(), label.getJustificationType(),
+                         lines, label.getMinimumHorizontalScale());
+    labelEffects.render (g, glyphs, effectScale, alpha);
+    g.setFont (font);
+    g.setColour (label.findColour (juce::Label::textColourId).withMultipliedAlpha (alpha));
+    g.drawFittedText (label.getText(), area, label.getJustificationType(), lines, label.getMinimumHorizontalScale());
+    g.setColour (label.findColour (juce::Label::outlineColourId).withMultipliedAlpha (alpha));
+    g.drawRect (label.getLocalBounds());
+}

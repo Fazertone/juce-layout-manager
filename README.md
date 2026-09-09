@@ -32,3 +32,6 @@ python scripts/figma_json_grabber.py files/XXX.json --output XXX.xml --frame_nam
   (`Sprite`, `SpriteSheetCollection`, `SpriteKnobComponent`,
   `SpriteSwitchComponent`) for building image-strip knobs/switches from an XML
   metadata file.
+
+- `layout_manager/README_Effects.md` — XML drop shadows and glows for shapes, text,
+  slider parts, and custom components; caching, scaling, clipping, and render tests.

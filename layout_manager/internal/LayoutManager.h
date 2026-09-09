@@ -12,10 +12,11 @@ public:
     ~RegisteredComponent();
 
     juce::Component* component;
+    juce::Component::SafePointer<juce::Component> safeComponent;
     juce::String name;
 };
 
-class LayoutManager {
+class LayoutManager : private juce::ValueTree::Listener {
 public:
     // Constructor that takes XML file path
     LayoutManager(const juce::String& xmlFilePath);
@@ -74,6 +75,8 @@ public:
     juce::var getAttribute(const juce::String& componentName, const juce::String& attributeName) const;
     void setAttribute(const juce::String& componentName, const juce::String& attributeName, const juce::var& value);
     
+    std::vector<LMShadowStyle> getEffects (const juce::String& name, const juce::String& target = {}) const;
+
     float scaling = 1.0f;
     
     juce::ValueTree layoutTree;
@@ -84,10 +87,34 @@ private:
     // Store LookAndFeel instances for text buttons and text editors
     juce::OwnedArray<LMLookAndFeel> buttonLookAndFeels;
     
+    struct LookAndFeelBinding
+    {
+        juce::Component::SafePointer<juce::Component> component;
+        LMLookAndFeel* lookAndFeel;
+    };
+    std::vector<LookAndFeelBinding> lookAndFeelBindings;
+    LMLookAndFeel* createLookAndFeel (juce::Component*, bool reuse = false);
+    struct PaintedEffect
+    {
+        juce::ValueTree node;
+        LMEffectRenderer renderer;
+    };
+    std::vector<std::unique_ptr<PaintedEffect>> paintedEffects;
+    LMEffectRenderer& effectsFor (const juce::ValueTree&);
+    void repaintEffects();
+    void configureLabelEffects (juce::Label&, const juce::ValueTree&);
+    void refreshLabelEffects (const juce::ValueTree&);
+    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override;
+    void valueTreeChildAdded (juce::ValueTree&, juce::ValueTree&) override;
+    void valueTreeChildRemoved (juce::ValueTree&, juce::ValueTree&, int) override;
+    void valueTreeChildOrderChanged (juce::ValueTree&, int, int) override { repaintEffects(); }
+    void valueTreeParentChanged (juce::ValueTree&) override {}
+
     // Registered typefaces by font name
 
     // Helper methods for painting
     void paintRectangle(juce::Graphics& g, const juce::ValueTree& rectData);
+    void paintEllipse (juce::Graphics&, const juce::ValueTree&);
     void paintLine(juce::Graphics& g, const juce::ValueTree& lineData);
     void paintAutoLabel(juce::Graphics& g, const juce::ValueTree& labelData);
 

@@ -84,3 +84,15 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 else()
     message(STATUS "Not applying Clang specific optimization flags. Compiler ID: ${CMAKE_CXX_COMPILER_ID} and System Name: ${CMAKE_SYSTEM_NAME}")
 endif()
+
+option(LAYOUT_MANAGER_BUILD_TESTS "Build offscreen effect render tests" ON)
+if(LAYOUT_MANAGER_BUILD_TESTS)
+    enable_testing()
+    juce_add_console_app(LayoutEffectsTests PRODUCT_NAME "LayoutEffectsTests")
+    target_sources(LayoutEffectsTests PRIVATE Tests/EffectsRenderTests.cpp)
+    target_link_libraries(LayoutEffectsTests PRIVATE layout_manager melatonin_blur
+        juce::juce_gui_basics juce::juce_audio_processors
+        juce::juce_recommended_config_flags)
+    target_compile_definitions(LayoutEffectsTests PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+    add_test(NAME LayoutEffectsTests COMMAND LayoutEffectsTests)
+endif()

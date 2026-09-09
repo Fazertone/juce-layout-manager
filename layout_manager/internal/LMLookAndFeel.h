@@ -6,6 +6,9 @@ class LMLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
     LMLookAndFeel();
+    LMEffectRenderer labelEffects, circleEffects, arcActiveEffects, arcBgEffects;
+    float effectScale = 1.0f;
+    void drawLabel (juce::Graphics&, juce::Label&) override;
 
     // Text button customization methods
     juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override;

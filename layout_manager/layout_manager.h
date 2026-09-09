@@ -29,6 +29,7 @@
 #include <melatonin_blur/melatonin_blur.h>
 
 // 2. Include your internal headers
+#include "internal/Effects.h"
 #include "internal/LayoutManager.h"
 #include "internal/LMLookAndFeel.h"
 #include "internal/CustomComponents.h"
