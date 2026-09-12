@@ -89,7 +89,7 @@ option(LAYOUT_MANAGER_BUILD_TESTS "Build offscreen effect render tests" ON)
 if(LAYOUT_MANAGER_BUILD_TESTS)
     enable_testing()
     juce_add_console_app(LayoutEffectsTests PRODUCT_NAME "LayoutEffectsTests")
-    target_sources(LayoutEffectsTests PRIVATE Tests/EffectsRenderTests.cpp Tests/ControlsTests.cpp)
+    target_sources(LayoutEffectsTests PRIVATE Tests/EffectsRenderTests.cpp Tests/ControlsTests.cpp Tests/LayerBlurTests.cpp)
     target_link_libraries(LayoutEffectsTests PRIVATE layout_manager melatonin_blur
         juce::juce_gui_basics juce::juce_audio_processors
         juce::juce_recommended_config_flags)

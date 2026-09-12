@@ -129,3 +129,54 @@ For custom components, call `render()` before the fill and `renderInner()` after
 the fill. These are separate passes so an inner shadow cannot be covered by its
 own source artwork. Each layer retains its Melatonin cache. See
 `README_Controls.md` for XML slider and envelope examples.
+
+## Layer blur and inset containers
+
+Painted `Rectangle` and `Ellipse` elements accept an untargeted
+`<LayerBlur blur="0.58"/>` in `Effects`. Unlike a shadow, this blurs the complete
+appearance of that element: outer shadows, fill, inner shadows and stroke. It
+never samples the background or blurs siblings, registered controls or text.
+Shadow ordering remains unchanged; layer blur is applied after the complete
+shape is composed, regardless of its position in the effect list.
+
+`blur` is a nonnegative, finite number in layout units; omitted, invalid and
+negative values disable the effect. If several layer blurs are declared, the
+last finite value wins. Untargeted lists apply to painted shapes only.
+Existing layouts without layer blur use their original drawing path.
+
+The padded ARGB surface includes the entire shadow and blur extent. Rendering
+uses at least 4 pixels per logical pixel (or the larger device density), so
+fractional blur survives the integer-radius backend. The surface is cached by
+element artwork, geometry, layout scale and render density. Editing attributes
+or effect children invalidates it; reload/removal discards the corresponding
+cache. Exact blur kernels may differ from Figma.
+
+This reusable recessed selector uses two XML rectangles. Place separate text or
+buttons over it, and call `paintComponent(g, "selector_artwork")` from the parent
+so the outer shadows have room beyond the controls' input bounds:
+
+```xml
+<Object name="selector_artwork">
+  <Rectangle name="outer" x="0" y="0" width="118" height="32"
+             cornerRadius="58" clampCornerRadius="true" fillColour="#ff151515">
+    <Effects>
+      <InnerShadow x="-1.16" y="-1.16" blur="5.8" colour="#ffd9d9d9" opacity="0.1"/>
+      <LayerBlur blur="0.58"/>
+      <DropShadow x="-2.9" y="-2.9" blur="11.6" spread="2.9" colour="#ff4d4d4d" opacity="0.6"/>
+      <DropShadow x="2.9" y="2.9" blur="11.6" spread="2.9" colour="#ff000000" opacity="0.8"/>
+    </Effects>
+  </Rectangle>
+  <Rectangle name="inset" x="1" y="1" width="116" height="30"
+             cornerRadius="58" clampCornerRadius="true" fillColour="#ff151515">
+    <Effects><InnerShadow x="1.16" y="1.16" blur="8.7" colour="#ff000000" opacity="0.8"/></Effects>
+  </Rectangle>
+</Object>
+```
+
+`clampCornerRadius="true"` constrains a rectangle's radius to half its smaller
+dimension, preserving circular Figma corners. These rectangles therefore form
+capsules even though their declared radius exceeds half-height. The option
+defaults to false, preserving JUCE's elliptical corners in existing layouts.
+`LayerBlurTests.cpp` exercises fractional blur, complete compositing, independent
+siblings, XML edits, reload and multiple layout/display scales. Its output is in
+`build/effect-renders/layer-blur-*.png`.

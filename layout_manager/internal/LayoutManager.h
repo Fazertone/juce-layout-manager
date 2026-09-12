@@ -100,6 +100,16 @@ private:
         LMEffectRenderer renderer;
     };
     std::vector<std::unique_ptr<PaintedEffect>> paintedEffects;
+    struct PaintedLayer
+    {
+        juce::ValueTree node, artwork;
+        juce::Image image;
+        juce::Rectangle<float> bounds;
+        float scale = 0.0f, density = 0.0f;
+    };
+    std::vector<std::unique_ptr<PaintedLayer>> paintedLayers;
+    void paintShape (juce::Graphics&, const juce::ValueTree&);
+    void paintShapeContents (juce::Graphics&, const juce::ValueTree&);
     LMEffectRenderer& effectsFor (const juce::ValueTree&);
     void repaintEffects();
     void configureLabelEffects (juce::Label&, const juce::ValueTree&);

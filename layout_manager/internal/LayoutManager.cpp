@@ -185,6 +185,7 @@ bool LayoutManager::loadFromXml(const juce::XmlElement& xmlData)
     // Clear existing layout data
     layoutTree.removeListener (this);
     paintedEffects.clear();
+    paintedLayers.clear();
     for (auto* laf : buttonLookAndFeels)
     {
         laf->labelEffects.setSource ({});
@@ -1362,13 +1363,9 @@ void LayoutManager::paintComponent(juce::Graphics& g, juce::String componentID){
         juce::ValueTree child = elementData.getChild(i);
         juce::String childType = child.getType().toString();
         
-        if (childType == "Rectangle")
+        if (childType == "Rectangle" || childType == "Ellipse")
         {
-            paintRectangle(g, child);
-        }
-        else if (childType == "Ellipse")
-        {
-            paintEllipse (g, child);
+            paintShape (g, child);
         }
         else if (childType == "Line")
         {
@@ -1381,6 +1378,83 @@ void LayoutManager::paintComponent(juce::Graphics& g, juce::String componentID){
     }
 }
 
+void LayoutManager::paintShapeContents (juce::Graphics& g, const juce::ValueTree& node)
+{
+    if (node.hasType ("Rectangle"))
+        paintRectangle (g, node);
+    else
+        paintEllipse (g, node);
+}
+
+void LayoutManager::paintShape (juce::Graphics& g, const juce::ValueTree& node)
+{
+    float blur = 0.0f;
+    for (const auto& effects : node)
+        if (effects.hasType ("Effects") && effects.getProperty ("target").toString().isEmpty())
+            for (const auto& effect : effects)
+                if (effect.hasType ("LayerBlur"))
+                {
+                    const float value = (float) effect.getProperty ("blur", 0.0f);
+                    if (std::isfinite (value))
+                        blur = juce::jmax (0.0f, value);
+                }
+    if (blur <= 0.0f || !std::isfinite (scaling) || scaling <= 0.0f)
+    {
+        paintShapeContents (g, node);
+        return;
+    }
+
+    PaintedLayer* cache = nullptr;
+    for (const auto& entry : paintedLayers)
+        if (entry->node == node)
+            cache = entry.get();
+    if (cache == nullptr)
+    {
+        auto entry = std::make_unique<PaintedLayer>();
+        entry->node = node;
+        cache = entry.get();
+        paintedLayers.push_back (std::move (entry));
+    }
+
+    // Four samples per logical pixel retain subpixel blurs with Melatonin's
+    // integer-radius backend. Larger device scales take precedence.
+    const float density = juce::jmax (4.0f, g.getInternalContext().getPhysicalPixelScaleFactor());
+    if (!cache->image.isValid() || cache->scale != scaling || cache->density != density
+        || !node.isEquivalentTo (cache->artwork))
+    {
+        juce::Rectangle<float> bounds ((float) node.getProperty ("x", 0.0f) * scaling,
+                                       (float) node.getProperty ("y", 0.0f) * scaling,
+                                       (float) node.getProperty ("width", 0.0f) * scaling,
+                                       (float) node.getProperty ("height", 0.0f) * scaling);
+        if (bounds.isEmpty())
+            return;
+        if (node.hasProperty ("strokeColour"))
+            bounds = bounds.expanded (juce::jmax (0.0f, (float) node.getProperty ("strokeWeight", 1.0f))
+                                       * scaling * 0.5f);
+        const int radius = juce::jmax (1, juce::roundToInt (blur * scaling * density));
+        bounds = effectsFor (node).getRenderBounds (bounds, scaling)
+                     .expanded (3.0f * (float) radius / density + 2.0f);
+        // Snap the surface outward on its own pixel grid, keeping the origin
+        // independent of component clipping and including the complete halo.
+        const auto pixels = (bounds * density).getSmallestIntegerContainer();
+        bounds = pixels.toFloat() / density;
+        juce::Image source (juce::Image::ARGB, pixels.getWidth(), pixels.getHeight(), true);
+        {
+            juce::Graphics offscreen (source);
+            offscreen.addTransform (juce::AffineTransform::translation (-bounds.getX(), -bounds.getY())
+                                        .scaled (density));
+            paintShapeContents (offscreen, node);
+        }
+        melatonin::CachedBlur filter ((size_t) radius);
+        cache->image = filter.render (source);
+        cache->bounds = bounds;
+        cache->artwork = node.createCopy();
+        cache->scale = scaling;
+        cache->density = density;
+    }
+    g.drawImage (cache->image, cache->bounds);
+}
+
 void LayoutManager::paintRectangle(juce::Graphics& g, const juce::ValueTree& rectData)
 {
     // Get basic position and size
@@ -1390,6 +1464,11 @@ void LayoutManager::paintRectangle(juce::Graphics& g, const juce::ValueTree& rec
     float height = static_cast<float>(static_cast<double>(rectData.getProperty("height", 0.0))) * scaling;
     
     float cornerRadius = static_cast<float>(static_cast<double>(rectData.getProperty("cornerRadius", 0.0))) * scaling;
+    // Figma uses circular corners even when its radius exceeds half-height.
+    // Opt in so existing layouts that rely on JUCE's elliptical corners retain
+    // their original shape.
+    if ((bool) rectData.getProperty ("clampCornerRadius", false))
+        cornerRadius = juce::jlimit (0.0f, juce::jmax (0.0f, juce::jmin (width, height) * 0.5f), cornerRadius);
     float opacity = static_cast<float>(static_cast<double>(rectData.getProperty("opacity", 1.0)));
     
     juce::Rectangle<float> rect(x, y, width, height);
@@ -1662,6 +1741,9 @@ void LayoutManager::valueTreeChildRemoved (juce::ValueTree& parent, juce::ValueT
     if (child.hasType ("Effects"))
         refreshLabelEffects (parent);
     // Keep effect lists alive while their listeners finish the current callback.
+    paintedLayers.erase (std::remove_if (paintedLayers.begin(), paintedLayers.end(),
+        [&child] (const auto& item) { return item->node == child || item->node.isAChildOf (child); }),
+        paintedLayers.end());
     // Prune removed painted elements; effect-list edits retain the renderer cache.
     if (! child.hasType ("Effects") && ! child.hasType ("DropShadow"))
         paintedEffects.erase (std::remove_if (paintedEffects.begin(), paintedEffects.end(),
