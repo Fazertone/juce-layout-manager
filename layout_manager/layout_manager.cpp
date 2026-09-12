@@ -7,3 +7,5 @@
 #include "internal/CustomComponents.cpp"
 #include "internal/Inspector.cpp"
 #include "internal/SpriteSheet.cpp"
+#include "internal/SliderStyles.cpp"
+#include "internal/Controls.cpp"

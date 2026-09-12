@@ -117,3 +117,15 @@ The JUCE console test target needs no external test framework and writes small
 PNG fixtures to `build/effect-renders/` at 1x, 1.5x, and 2x. It also reports an
 informational cached-versus-cold rendering comparison. Disable the target with
 `-DLAYOUT_MANAGER_BUILD_TESTS=OFF`. Consumers of the module do not build it.
+
+## Inner shadows
+
+`InnerShadow` accepts the same attributes as `DropShadow`. It is clipped to the
+source shape and does not expand `getRenderBounds()`. Built-in filled rectangles,
+ellipses and rotary backplates composite it after their fill and before their
+stroke. Existing outer-shadow ordering is unchanged.
+
+For custom components, call `render()` before the fill and `renderInner()` after
+the fill. These are separate passes so an inner shadow cannot be covered by its
+own source artwork. Each layer retains its Melatonin cache. See
+`README_Controls.md` for XML slider and envelope examples.

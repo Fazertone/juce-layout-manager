@@ -35,3 +35,6 @@ python scripts/figma_json_grabber.py files/XXX.json --output XXX.xml --frame_nam
 
 - `layout_manager/README_Effects.md` — XML drop shadows and glows for shapes, text,
   slider parts, and custom components; caching, scaling, clipping, and render tests.
+
+- `layout_manager/README_Controls.md` — XML rotary symbols, vertical bar/dot
+  sliders, numeric entry, and a reusable interactive AHDSR graph.

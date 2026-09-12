@@ -430,6 +430,10 @@ juce::Slider::SliderLayout LMLookAndFeel::getSliderLayout(juce::Slider& slider)
 void LMLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
     const float rotaryStartAngle, const float rotaryEndAngle, juce::Slider& slider)
 {
+    if (drawSymbolSlider (g, sliderPos))
+        return;
+    const auto cap = sliderWidgetStyle.getProperty ("roundedEnds", false)
+        ? juce::PathStrokeType::rounded : juce::PathStrokeType::butt;
     juce::Slider::SliderLayout layout = getSliderLayout(slider);
 
     juce::Rectangle<int> sliderBounds = layout.sliderBounds;
@@ -453,14 +457,14 @@ void LMLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width,
         juce::Path path;
         path.addArc (centreX - outer_radius, centreY - outer_radius, outer_radius * 2.0f,
                      outer_radius * 2.0f, angle, rotaryEndAngle, true);
-        arcBgEffects.render (g, path, juce::PathStrokeType (rotarySliderArcBgWidth), effectScale);
+        arcBgEffects.render (g, path, juce::PathStrokeType (rotarySliderArcBgWidth, juce::PathStrokeType::curved, cap), effectScale);
     }
     if (rotarySliderArcActiveWidth > 0.0f && ! rotarySliderArcActiveColour.isTransparent())
     {
         juce::Path path;
         path.addArc (centreX - outer_radius, centreY - outer_radius, outer_radius * 2.0f,
                      outer_radius * 2.0f, rotaryStartAngle, angle, true);
-        arcActiveEffects.render (g, path, juce::PathStrokeType (rotarySliderArcActiveWidth), effectScale);
+        arcActiveEffects.render (g, path, juce::PathStrokeType (rotarySliderArcActiveWidth, juce::PathStrokeType::curved, cap), effectScale);
     }
     juce::Path circle;
     circle.addEllipse (centreX - inner_radius, centreY - inner_radius, inner_radius * 2.0f, inner_radius * 2.0f);
@@ -476,7 +480,7 @@ void LMLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width,
         juce::Path bgArc;
         bgArc.addArc(centreX - outer_radius, centreY - outer_radius, outer_radius * 2.0f, outer_radius * 2.0f, 
                      angle, rotaryEndAngle, true);
-        g.strokePath(bgArc, juce::PathStrokeType(rotarySliderArcBgWidth));
+        g.strokePath(bgArc, juce::PathStrokeType (rotarySliderArcBgWidth, juce::PathStrokeType::curved, cap));
     }
 
     // Draw active arc (from start to current position) if specified
@@ -486,7 +490,7 @@ void LMLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width,
         juce::Path activeArc;
         activeArc.addArc(centreX - outer_radius, centreY - outer_radius, outer_radius * 2.0f, outer_radius * 2.0f, 
                         rotaryStartAngle, angle, true);
-        g.strokePath(activeArc, juce::PathStrokeType(rotarySliderArcActiveWidth));
+        g.strokePath(activeArc, juce::PathStrokeType (rotarySliderArcActiveWidth, juce::PathStrokeType::curved, cap));
     }
 
     // Draw circle fill if specified
@@ -495,6 +499,8 @@ void LMLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width,
         g.setColour(rotarySliderCircleFillColour);
         g.fillEllipse(centreX - inner_radius, centreY - inner_radius, inner_radius * 2.0f, inner_radius * 2.0f);
     }
+
+    circleEffects.renderInner (g, circle, effectScale);
 
     // Draw circle stroke if specified
     if (rotarySliderCircleStrokeWidth > 0.0f && rotarySliderCircleStrokeColour.getAlpha() > 0)

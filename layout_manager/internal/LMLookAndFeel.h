@@ -8,6 +8,12 @@ public:
     LMLookAndFeel();
     LMEffectRenderer labelEffects, circleEffects, arcActiveEffects, arcBgEffects;
     float effectScale = 1.0f;
+    juce::ValueTree sliderWidgetStyle;
+    LMEffectRenderer symbolEffects, trackEffects, thumbEffects;
+    void drawLinearSlider (juce::Graphics&, int, int, int, int, float, float, float,
+                           juce::Slider::SliderStyle, juce::Slider&) override;
+    bool drawSymbolSlider (juce::Graphics&, float position);
+
     void drawLabel (juce::Graphics&, juce::Label&) override;
 
     // Text button customization methods

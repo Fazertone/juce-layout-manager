@@ -143,7 +143,8 @@ juce::FontOptions LayoutManager::createFontFromElement(const juce::ValueTree& el
     // }
     
     // Apply scaled font size (using point height)
-    options = options.withPointHeight(fontSize * scaling);
+    options = options.withPointHeight(fontSize * scaling)
+                     .withKerningFactor ((float) elementData.getProperty ("letterSpacing", 0.0f));
     
     return options;
 }
@@ -459,7 +460,13 @@ void LayoutManager::applyLayout(){
             setComboBoxLayout(registeredComponents[i].component, elementData);
         } else if (elementType == "HyperlinkButton"){
             setHyperlinkButtonLayout(registeredComponents[i], elementData);
-        } else if (elementType == "RotarySlider"){
+        } else if (elementType == "SvgButton") {
+            if (auto* button = dynamic_cast<LMSvgButton*> (registeredComponents[i].component))
+                button->setStyle (elementData, assetsFolder, scaling);
+        } else if (elementType == "AHDSR") {
+            if (auto* envelope = dynamic_cast<LMAhdsrComponent*> (registeredComponents[i].component))
+                envelope->setStyle (elementData, scaling);
+        } else if (elementType == "LinearSlider" || elementType == "RotarySlider"){
             setRotarySliderLayout(registeredComponents[i].component, elementData);
         } else if (elementType == "ImageButton"){
             // Just position it
@@ -1226,7 +1233,19 @@ void LayoutManager::setRotarySliderLayout(juce::Component* component, const juce
         return;
     }
 
-    slider->setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    const bool linear = elementData.hasType ("LinearSlider");
+    slider->setSliderStyle (linear ? juce::Slider::LinearVertical
+                                   : juce::Slider::RotaryHorizontalVerticalDrag);
+    if (elementData.hasProperty ("textBox"))
+        slider->setTextBoxStyle (elementData.getProperty ("textBox").toString() == "none"
+                                    ? juce::Slider::NoTextBox : juce::Slider::TextBoxBelow,
+                                false, 60, 16);
+    if (elementData.hasProperty ("startAngle") || elementData.hasProperty ("endAngle"))
+        slider->setRotaryParameters (
+            juce::degreesToRadians ((float) elementData.getProperty ("startAngle", 225.0f)),
+            juce::degreesToRadians ((float) elementData.getProperty ("endAngle", 495.0f)), true);
+    if (auto* styled = dynamic_cast<LMSlider*> (slider))
+        styled->setValueDisplayEnabled ((bool) elementData.getProperty ("showValueOnHover", true));
 
     // Retain the look-and-feel and its effect caches across layout applications.
     auto* laf = createLookAndFeel (component, true);
@@ -1244,6 +1263,10 @@ void LayoutManager::setRotarySliderLayout(juce::Component* component, const juce
     juce::ValueTree sliderWidget = findChildByName("slider_widget", elementData);
     juce::ValueTree sliderValueText = findChildByName("slider_value_text", elementData);
 
+    laf->sliderWidgetStyle = sliderWidget;
+    laf->symbolEffects.setSource (sliderWidget, "symbol");
+    laf->trackEffects.setSource (sliderWidget, "track");
+    laf->thumbEffects.setSource (sliderWidget, "thumb");
     laf->circleEffects.setSource (sliderWidget, "circle");
     laf->arcActiveEffects.setSource (sliderWidget, "arcActive");
     laf->arcBgEffects.setSource (sliderWidget, "arcBg");
@@ -1321,6 +1344,8 @@ void LayoutManager::setRotarySliderLayout(juce::Component* component, const juce
 
     // Apply the custom LookAndFeel to the slider
     slider->setLookAndFeel(laf);
+    // Reusing a look-and-feel does not notify JUCE that its slider geometry changed.
+    slider->resized();
 }
 
 
@@ -1382,7 +1407,7 @@ void LayoutManager::paintRectangle(juce::Graphics& g, const juce::ValueTree& rec
     {
         juce::String gradientType = rectData.getProperty("fill-gradient-type").toString();
         
-        if (gradientType == "linear" && rectData.hasProperty("fill-gradient-stops"))
+        if ((gradientType == "linear" || gradientType == "radial") && rectData.hasProperty("fill-gradient-stops"))
         {
             // Parse gradient start and end points (relative coordinates 0-1)
             juce::String startStr = rectData.getProperty("fill-gradient-start", "0.5,0").toString();
@@ -1421,7 +1446,7 @@ void LayoutManager::paintRectangle(juce::Graphics& g, const juce::ValueTree& rec
                 colour1 = colour1.withAlpha(colour1.getFloatAlpha() * opacity);
                 colour2 = colour2.withAlpha(colour2.getFloatAlpha() * opacity);
                 
-                juce::ColourGradient gradient(colour1, gradStart, colour2, gradEnd, false);
+                juce::ColourGradient gradient(colour1, gradStart, colour2, gradEnd, gradientType == "radial");
                 
                 // Add intermediate stops if present
                 for (int i = 1; i < stops.size() - 1; ++i)
@@ -1460,6 +1485,8 @@ void LayoutManager::paintRectangle(juce::Graphics& g, const juce::ValueTree& rec
             g.fillRect(rect);
     }
     
+    effectsFor (rectData).renderInner (g, shape, scaling, opacity);
+
     // Draw stroke if present
     if (rectData.hasProperty("strokeColour"))
     {
@@ -1660,6 +1687,7 @@ void LayoutManager::paintEllipse (juce::Graphics& g, const juce::ValueTree& node
         effectsFor (node).render (g, path, scaling, opacity);
         g.setColour (juce::Colour::fromString (node["fillColour"].toString()).withMultipliedAlpha (opacity));
         g.fillPath (path);
+        effectsFor (node).renderInner (g, path, scaling, opacity);
     }
     else if (node.hasProperty ("strokeColour"))
         effectsFor (node).render (g, path, stroke, scaling, opacity);

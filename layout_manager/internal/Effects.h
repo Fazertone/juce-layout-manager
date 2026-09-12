@@ -11,6 +11,7 @@ struct LMShadowStyle
     float x = 0.0f, y = 0.0f, blur = 0.0f, spread = 0.0f;
     juce::Colour colour = juce::Colours::black;
     float opacity = 1.0f;
+    bool inner = false;
 };
 
 // Keep one renderer per painted target, on the message thread. Geometry passed
@@ -33,6 +34,8 @@ public:
     void render (juce::Graphics&, const juce::Path&, const juce::PathStrokeType&,
                  float scale = 1.0f, float opacity = 1.0f);
     void render (juce::Graphics&, const juce::GlyphArrangement&, float scale = 1.0f, float opacity = 1.0f);
+    // Inner shadows composite after the source fill, clipped to its shape.
+    void renderInner (juce::Graphics&, const juce::Path&, float scale = 1.0f, float opacity = 1.0f);
     juce::Rectangle<float> getRenderBounds (juce::Rectangle<float> sourceBounds, float scale = 1.0f) const;
 
 private:
@@ -40,6 +43,7 @@ private:
     {
         LMShadowStyle style;
         melatonin::DropShadow shadow;
+        melatonin::InnerShadow innerShadow;
     };
     std::vector<std::unique_ptr<Layer>> layers;
     juce::ValueTree source;

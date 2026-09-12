@@ -35,9 +35,10 @@ std::vector<LMShadowStyle> LMEffectRenderer::readEffects (const juce::ValueTree&
     for (const auto& group : node)
         if (group.hasType ("Effects") && group.getProperty ("target").toString() == target)
             for (const auto& effect : group)
-                if (effect.hasType ("DropShadow"))
+                if (effect.hasType ("DropShadow") || effect.hasType ("InnerShadow"))
                 {
                     LMShadowStyle style;
+                    style.inner = effect.hasType ("InnerShadow");
                     style.x = effectNumber (effect, "x", 0.0f);
                     style.y = effectNumber (effect, "y", 0.0f);
                     style.blur = juce::jmax (0.0f, effectNumber (effect, "blur", 0.0f));
@@ -106,7 +107,7 @@ void LMEffectRenderer::render (juce::Graphics& g, const juce::Path& path, float 
     juce::Graphics::ScopedSaveState saved (g);
     for (auto& layer : layers)
     {
-        if (layer->style.opacity <= 0.0f || layer->style.colour.isTransparent() || opacity <= 0.0f)
+        if (layer->style.inner || layer->style.opacity <= 0.0f || layer->style.colour.isTransparent() || opacity <= 0.0f)
             continue;
         if (path.getBounds().expanded ((float) scaledEffectValue (layer->style.spread, scale)).isEmpty())
             continue;
@@ -123,7 +124,7 @@ void LMEffectRenderer::render (juce::Graphics& g, const juce::Path& path,
     juce::Graphics::ScopedSaveState saved (g);
     for (auto& layer : layers)
     {
-        if (layer->style.opacity <= 0.0f || layer->style.colour.isTransparent() || opacity <= 0.0f)
+        if (layer->style.inner || layer->style.opacity <= 0.0f || layer->style.colour.isTransparent() || opacity <= 0.0f)
             continue;
         const auto width = stroke.getStrokeThickness() + 2.0f * (float) scaledEffectValue (layer->style.spread, scale);
         if (width <= 0.0f)
@@ -153,7 +154,7 @@ juce::Rectangle<float> LMEffectRenderer::getRenderBounds (juce::Rectangle<float>
     for (const auto& layer : layers)
     {
         const auto& s = layer->style;
-        if (s.opacity <= 0.0f || s.colour.isTransparent())
+        if (s.inner || s.opacity <= 0.0f || s.colour.isTransparent())
             continue;
         // Two logical pixels conservatively cover antialiasing and fractional-DPI padding.
         const auto padding = (float) (scaledEffectValue (s.blur, scale)
@@ -162,4 +163,24 @@ juce::Rectangle<float> LMEffectRenderer::getRenderBounds (juce::Rectangle<float>
             (float) scaledEffectValue (s.x, scale), (float) scaledEffectValue (s.y, scale)));
     }
     return result;
+}
+
+void LMEffectRenderer::renderInner (juce::Graphics& g, const juce::Path& path, float scale, float opacity)
+{
+    if (path.isEmpty() || ! std::isfinite (scale) || scale <= 0.0f)
+        return;
+    juce::Graphics::ScopedSaveState saved (g);
+    g.reduceClipRegion (path);
+    for (auto& layer : layers)
+    {
+        const auto& s = layer->style;
+        if (! s.inner || s.opacity <= 0.0f || s.colour.isTransparent())
+            continue;
+        auto& shadow = layer->innerShadow;
+        shadow.setRadius (scaledEffectValue (s.blur, scale));
+        shadow.setSpread (scaledEffectValue (s.spread, scale));
+        shadow.setOffset (scaledEffectValue (s.x, scale), scaledEffectValue (s.y, scale));
+        shadow.setColor (s.colour.withMultipliedAlpha (s.opacity * juce::jlimit (0.0f, 1.0f, opacity)));
+        shadow.render (g, path);
+    }
 }
