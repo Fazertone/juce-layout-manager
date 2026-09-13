@@ -1,4 +1,4 @@
-# XML sliders and AHDSR
+# XML controls
 
 Register components with `LayoutManager::registerComponent`, set `scaling`, and
 call `applyResize()`. Geometry is in layout units. Top-level bounds are relative
@@ -6,6 +6,27 @@ to the component's parent; `slider_widget` bounds are local to the slider.
 The consumer owns components, parameter ranges, defaults and bindings. XML owns
 visuals. Existing `RotarySlider` documents keep their original rendering unless
 new attributes are supplied.
+
+## Text buttons and fields
+
+`TextButton` accepts optional `fillColourHover`, `fillColourDown`, and
+`fillColourFocus` on its `btn_text` (or `btn_txt`) child. Press takes precedence
+over hover, then keyboard focus. Missing attributes preserve JUCE's usual text
+colour, and disabled buttons use the normal colour at half opacity. Leave the
+`btn_bg` child empty for text-only actions. Font size and `letterSpacing` use the
+same font configuration as labels.
+
+```xml
+<TextButton name="confirm" x="0" y="0" width="60" height="24">
+  <Rectangle name="btn_bg"/>
+  <Object name="btn_text" text="YES" fontName="Jost SemiBold" fontSize="11"
+          fillColour="#ff554360" fillColourHover="#ffc993ec"
+          fillColourDown="#ffe3b5ff" fillColourFocus="#ff9474a6"/>
+</TextButton>
+```
+
+`TextEditor` corner radii are in layout units and scale with its bounds. A
+20-unit-high field with `cornerRadius="10"` remains a pill at every scale.
 
 ## Sliders
 

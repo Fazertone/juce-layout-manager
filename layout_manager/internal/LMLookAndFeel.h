@@ -18,6 +18,9 @@ public:
 
     // Text button customization methods
     juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override;
+    void drawButtonText (juce::Graphics&, juce::TextButton&, bool highlighted, bool down) override;
+    // Optional text colours; absent XML attributes retain JUCE's normal behaviour.
+    juce::ValueTree buttonTextStyle;
     void drawButtonBackground(juce::Graphics& g,
                             juce::Button& button,
                             const juce::Colour& backgroundColour,

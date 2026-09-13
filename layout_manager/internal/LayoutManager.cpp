@@ -794,6 +794,7 @@ void LayoutManager::setTextButtonLayout(juce::Component* component, const juce::
     }
 
     // Configure font from btn_text element
+    laf->buttonTextStyle = btnText;
     if (btnText.isValid())
     {
         // Use generic font creation
@@ -894,12 +895,12 @@ void LayoutManager::setTextEditorLayout(juce::Component* component, const juce::
     if (elementData.hasProperty("cornerRadius"))
     {
         float cornerRadius = static_cast<float>(elementData.getProperty("cornerRadius"));
-        laf->setTextEditorCornerRadius(cornerRadius);
+        laf->setTextEditorCornerRadius(cornerRadius * scaling);
     }
     else if (txtBoxBg.isValid() && txtBoxBg.hasProperty("cornerRadius"))
     {
         float cornerRadius = static_cast<float>(txtBoxBg.getProperty("cornerRadius"));
-        laf->setTextEditorCornerRadius(cornerRadius);
+        laf->setTextEditorCornerRadius(cornerRadius * scaling);
     }
 
     // Configure stroke and fill colors from txt_box_bg

@@ -16,6 +16,54 @@ public:
     ControlsTests() : UnitTest ("XML controls", "LayoutEffects") {}
     void runTest() override
     {
+        beginTest ("Text-only button states and pill fields scale from XML");
+        auto buttonXml = juce::parseXML (R"xml(<JUCELayout>
+          <TextButton name="yes" x="0" y="0" width="100" height="30">
+            <Rectangle name="btn_bg"/>
+            <Object name="btn_text" text="YES" fontSize="12" fillColour="#ff554360"
+              fillColourHover="#ffc993ec" fillColourDown="#ffe3b5ff"/>
+          </TextButton>
+          <TextEditor name="entry" x="0" y="0" width="100" height="20" cornerRadius="10">
+            <Rectangle name="text_editor_box" fillColour="#ff171517"/>
+          </TextEditor>
+        </JUCELayout>)xml");
+        juce::TextButton yes;
+        juce::TextEditor entry;
+        LayoutManager buttons (*buttonXml);
+        buttons.registerComponent (&yes, "yes");
+        buttons.registerComponent (&entry, "entry");
+        for (const auto scale : { 1.0f, 1.5f, 2.0f })
+        {
+            buttons.scaling = scale;
+            buttons.applyResize();
+            int previousRed = 0;
+            for (const auto state : { juce::Button::buttonNormal, juce::Button::buttonOver, juce::Button::buttonDown })
+            {
+                yes.setState (state);
+                const auto rendered = yes.createComponentSnapshot (yes.getLocalBounds());
+                int brightest = 0;
+                for (int y = 0; y < rendered.getHeight(); ++y)
+                    for (int x = 0; x < rendered.getWidth(); ++x)
+                        if (rendered.getPixelAt (x, y).getAlpha() > 200)
+                            brightest = juce::jmax (brightest, (int) rendered.getPixelAt (x, y).getRed());
+                expect (brightest > previousRed);
+                previousRed = brightest;
+                expectEquals ((int) rendered.getPixelAt (0, 0).getAlpha(), 0);
+            }
+            yes.setEnabled (false);
+            yes.setState (juce::Button::buttonOver);
+            const auto disabled = yes.createComponentSnapshot (yes.getLocalBounds());
+            int maxAlpha = 0;
+            for (int y = 0; y < disabled.getHeight(); ++y)
+                for (int x = 0; x < disabled.getWidth(); ++x)
+                    maxAlpha = juce::jmax (maxAlpha, (int) disabled.getPixelAt (x, y).getAlpha());
+            expect (maxAlpha > 0 && maxAlpha <= 128);
+            yes.setEnabled (true);
+            const auto rounded = entry.createComponentSnapshot (entry.getLocalBounds());
+            expectEquals ((int) rounded.getPixelAt (juce::roundToInt (3 * scale), juce::roundToInt (scale)).getAlpha(), 0);
+            expectEquals ((int) rounded.getPixelAt (juce::roundToInt (10 * scale), juce::roundToInt (10 * scale)).getAlpha(), 255);
+        }
+
         beginTest ("Linear slider uses XML bounds, full range and distinct bar/dot geometry");
         auto xml = juce::parseXML (R"xml(<JUCELayout><Object name="panel">
           <LinearSlider name="gain" x="0" y="0" width="32" height="120" textBox="none">

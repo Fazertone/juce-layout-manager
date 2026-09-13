@@ -56,6 +56,36 @@ void LMLookAndFeel::drawButtonBackground(juce::Graphics& g,
     }
 }
 
+void LMLookAndFeel::drawButtonText (juce::Graphics& g, juce::TextButton& button,
+                                  bool highlighted, bool down)
+{
+    const char* property = nullptr;
+    if (button.isEnabled())
+    {
+        if (down && buttonTextStyle.hasProperty ("fillColourDown")) property = "fillColourDown";
+        else if (highlighted && buttonTextStyle.hasProperty ("fillColourHover")) property = "fillColourHover";
+        else if (button.hasKeyboardFocus (true) && buttonTextStyle.hasProperty ("fillColourFocus")) property = "fillColourFocus";
+    }
+    if (property == nullptr)
+    {
+        juce::LookAndFeel_V4::drawButtonText (g, button, highlighted, down);
+        return;
+    }
+
+    const auto font = getTextButtonFont (button, button.getHeight());
+    g.setFont (font);
+    g.setColour (juce::Colour::fromString (buttonTextStyle.getProperty (property).toString()));
+    const int yIndent = juce::jmin (4, button.proportionOfHeight (0.3f));
+    const int cornerSize = juce::jmin (button.getHeight(), button.getWidth()) / 2;
+    const int fontIndent = juce::roundToInt (font.getHeight() * 0.6f);
+    const int leftIndent = juce::jmin (fontIndent, 2 + cornerSize / (button.isConnectedOnLeft() ? 4 : 2));
+    const int rightIndent = juce::jmin (fontIndent, 2 + cornerSize / (button.isConnectedOnRight() ? 4 : 2));
+    const int textWidth = button.getWidth() - leftIndent - rightIndent;
+    if (textWidth > 0)
+        g.drawFittedText (button.getButtonText(), leftIndent, yIndent, textWidth,
+                         button.getHeight() - yIndent * 2, juce::Justification::centred, 2);
+}
+
 void LMLookAndFeel::setButtonFont(const juce::Font& font)
 {
     buttonFont = font;
