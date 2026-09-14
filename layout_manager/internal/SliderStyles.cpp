@@ -45,7 +45,20 @@ bool LMLookAndFeel::drawSymbolSlider (juce::Graphics& g, float position)
     juce::Path symbol;
     const auto r = radius * number (sliderWidgetStyle, "symbolRadius", 0.78f);
     const auto pi = juce::MathConstants<float>::pi;
-    if (style == "sector")
+    auto symbolWidth = number (sliderWidgetStyle, "symbolWidth", 1.5f) * effectScale;
+    if (style == "bipolarSector")
+    {
+        const auto angle = (position * 2.0f - 1.0f)
+            * juce::degreesToRadians (number (sliderWidgetStyle, "maximumSweep", 360.0f));
+        symbol.startNewSubPath (centre);
+        symbol.lineTo (centre.x, centre.y - r);
+        if (std::abs (angle) > 0.00001f)
+        {
+            symbol.addCentredArc (centre.x, centre.y, r, r, 0, 0, angle, false);
+            symbol.closeSubPath();
+        }
+    }
+    else if (style == "sector")
     {
         // An outlined quadrant rotates around its vertex with bipolar pitch.
         symbol.startNewSubPath (0, 0);
@@ -56,23 +69,44 @@ bool LMLookAndFeel::drawSymbolSlider (juce::Graphics& g, float position)
                                     * juce::degreesToRadians (number (sliderWidgetStyle, "rotationRange", 180.0f)))
                                     .translated (centre.x, centre.y));
     }
-    else if (style == "pan" || style == "dome")
+    else if (style == "pan")
     {
-        const auto start = style == "pan" ? -pi * 0.75f : -pi * juce::jmap (position, number (sliderWidgetStyle, "minimumOpening", 0.60f),
+        // Anchor the radial edge on the panned side and close the other edge
+        // towards it, collapsing the 270-degree outline to one diagonal.
+        const auto start = position <= 0.5f ? -pi * 0.75f : juce::jmap (position, 0.5f, 1.0f, -pi * 0.75f, pi * 0.75f);
+        const auto end = position >= 0.5f ? pi * 0.75f : juce::jmap (position, 0.0f, 0.5f, -pi * 0.75f, pi * 0.75f);
+        symbol.startNewSubPath (centre);
+        symbol.lineTo (centre.x + std::sin (start) * r, centre.y - std::cos (start) * r);
+        if (end > start)
+        {
+            symbol.addCentredArc (centre.x, centre.y, r, r, 0, start, end, false);
+            symbol.closeSubPath();
+        }
+    }
+    else if (style == "dome")
+    {
+        const auto start = -pi * juce::jmap (position, number (sliderWidgetStyle, "minimumOpening", 0.60f),
                                                                number (sliderWidgetStyle, "maximumOpening", 0.75f));
         const auto end = -start;
         symbol.addCentredArc (0, 0, r, r, 0, start, end, true);
-        symbol.lineTo (0, style == "pan" ? 0.0f : -r * position * number (sliderWidgetStyle, "maximumNotchDepth", 0.18f));
+        symbol.lineTo (0, -r * position * number (sliderWidgetStyle, "maximumNotchDepth", 0.18f));
         symbol.closeSubPath();
-        const auto rotation = style == "pan" ? (position - 0.5f) * pi * 0.8f : 0.0f;
-        symbol.applyTransform (juce::AffineTransform::rotation (rotation).translated (centre.x, centre.y));
+        symbol.applyTransform (juce::AffineTransform::translation (centre.x, centre.y));
     }
     else if (style == "ring")
     {
         const auto minRadius = number (sliderWidgetStyle, "minimumRadius", 0.12f);
         const auto maxRadius = number (sliderWidgetStyle, "maximumRadius", 0.5f);
-        const auto ringRadius = radius * juce::jmap (position, minRadius, maxRadius);
+        symbolWidth = juce::jmap (position, number (sliderWidgetStyle, "minimumSymbolWidth", symbolWidth / effectScale)
+                                              * effectScale, symbolWidth);
+        const auto ringRadius = juce::jlimit (0.0f, juce::jmax (0.0f, radius - symbolWidth * 0.5f),
+                                              radius * juce::jmap (position, minRadius, maxRadius));
         symbol.addEllipse (centre.x - ringRadius, centre.y - ringRadius, ringRadius * 2, ringRadius * 2);
+    }
+    else if (style == "svgMorph")
+    {
+        symbol = svgInterpolator.createPath (position);
+        symbol.applyTransform (juce::AffineTransform::scale (r).translated (centre.x, centre.y));
     }
     else if (style == "jaggedRing")
     {
@@ -92,7 +126,7 @@ bool LMLookAndFeel::drawSymbolSlider (juce::Graphics& g, float position)
         }
         symbol.closeSubPath();
     }
-    const juce::PathStrokeType stroke (number (sliderWidgetStyle, "symbolWidth", 1.5f) * effectScale,
+    const juce::PathStrokeType stroke (symbolWidth,
                                       juce::PathStrokeType::curved, juce::PathStrokeType::rounded);
     symbolEffects.render (g, symbol, stroke, effectScale);
     g.setColour (colour (sliderWidgetStyle, "symbolColour", "ffc993ec"));

@@ -10,6 +10,7 @@ public:
     float effectScale = 1.0f;
     juce::ValueTree sliderWidgetStyle;
     LMEffectRenderer symbolEffects, trackEffects, thumbEffects;
+    LMSvgInterpolator svgInterpolator;
     void drawLinearSlider (juce::Graphics&, int, int, int, int, float, float, float,
                            juce::Slider::SliderStyle, juce::Slider&) override;
     bool drawSymbolSlider (juce::Graphics&, float position);

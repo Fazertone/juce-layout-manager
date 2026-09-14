@@ -93,10 +93,14 @@ public:
         }
 
         beginTest ("Each XML rotary symbol changes with the normalised value");
-        for (const auto* name : { "sector", "pan", "ring", "jaggedRing", "dome", "arc" })
+        for (const auto* name : { "sector", "bipolarSector", "pan", "ring", "jaggedRing", "svgMorph", "dome", "arc" })
         {
             auto document = juce::parseXML (juce::String (R"xml(<JUCELayout><RotarySlider name="knob" x="0" y="0" width="80" height="80" textBox="none" startAngle="225" endAngle="495">
-              <SliderWidget name="slider_widget" x="8" y="8" width="64" height="64" visualStyle=")xml") + name + R"xml(" symbolWidth="2" roundedEnds="true" arcActiveColour="ffc993ec" arcActiveWidth="3" arcBgColour="ff775588" arcBgWidth="1"/></RotarySlider></JUCELayout>)xml");
+              <SliderWidget name="slider_widget" x="8" y="8" width="64" height="64" visualStyle=")xml") + name + R"xml(" symbolWidth="2" roundedEnds="true" arcActiveColour="ffc993ec" arcActiveWidth="3" arcBgColour="ff775588" arcBgWidth="1">
+                <SvgInterpolator><Circle at="0" radius="0.1"/>
+                  <Path at="1" viewBox="0 0 2 2" d="M1 0 L2 1 L1 2 L0 1 Z"/>
+                </SvgInterpolator>
+              </SliderWidget></RotarySlider></JUCELayout>)xml");
             LMSlider knob;
             LayoutManager manager (*document);
             manager.registerComponent (&knob, "knob");

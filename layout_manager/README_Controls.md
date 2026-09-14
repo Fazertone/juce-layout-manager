@@ -60,9 +60,11 @@ Alternative `visualStyle` values on `slider_widget`:
 | Style | Behaviour | Additional attributes (defaults) |
 | --- | --- | --- |
 | `sector` | Outlined quadrant rotates with the value | `rotationRange=180` |
-| `pan` | Notched circular outline turns left/right around its midpoint | |
-| `ring` | Inner ring expands | `minimumRadius=0.12`, `maximumRadius=0.5` |
+| `bipolarSector` | Vertical line at centre; an outlined sector opens anticlockwise/clockwise below/above centre | `maximumSweep=360` (degrees in either direction) |
+| `pan` | A circle with a 90° bottom notch closes towards its fixed lower-left/right edge, becoming a single diagonal at either extreme | |
+| `ring` | Inner ring expands; its outer stroke stays inside the backplate | `minimumRadius=0.12`, `maximumRadius=0.5`, `minimumSymbolWidth=symbolWidth` |
 | `jaggedRing` | Ring becomes increasingly irregular | `teeth=16`, `maximumDepth=0.3`, `irregularity=0.12` |
+| `svgMorph` | Interpolates cached circle/SVG contour keyframes | `SvgInterpolator` child, below |
 | `dome` | Arched outline opens and its notch deepens | `minimumOpening=0.60`, `maximumOpening=0.75`, `maximumNotchDepth=0.18` |
 
 All symbol styles accept `padding` (layout units), `symbolRadius` (fraction of
@@ -70,6 +72,47 @@ backplate radius), `symbolWidth`, `symbolColour`, and the existing circle
 fill/stroke attributes. Ring radii are fractions of the backplate radius;
 dome openings are fractions of pi. Use `Effects target="symbol"` for outline
 glow and `Effects target="circle"` for backplate effects.
+
+Set `maximumRadius="1"` on a ring to reach the backplate's full usable radius.
+`minimumSymbolWidth` optionally interpolates the stroke width from minimum to
+`symbolWidth` at maximum, so a small ring can grow into a thicker full-size ring.
+
+### SVG contour interpolation
+
+`LMSvgInterpolator` is a reusable path generator, also used by `svgMorph` knobs.
+Call `setSource(tree)` when the XML changes, then `createPath(position)` to get a
+closed path centred at the origin. LayoutManager configures and caches it for
+sliders automatically; paint calls perform no SVG parsing or file reads.
+
+```xml
+<SliderWidget name="slider_widget" x="4" y="4" width="40" height="40"
+              visualStyle="svgMorph" symbolRadius="0.74" symbolWidth="1.5">
+  <SvgInterpolator>
+    <Circle at="0" radius="0.08"/>
+    <Path at="0.5" viewBox="0 0 20 20" scale="0.6"
+          d="M10 0 L20 10 L10 20 L0 10 Z"/>
+    <Path at="1" viewBox="0 0 20 20"
+          d="M10 0 L20 10 L10 20 L0 10 Z"/>
+  </SvgInterpolator>
+</SliderWidget>
+```
+
+Copy SVG path `d` and `viewBox` attributes directly into `Path` keyframes.
+The viewBox centre becomes the origin and its largest dimension maps to 2 units;
+optional `scale` defaults to 1. Circle radii use those normalized units. The
+slider then scales the result by `symbolRadius` times its backplate radius.
+Colours, strokes and glow come from the widget, allowing the same shape data to
+use any theme. Embedded path data works with bundled XML without asset files.
+
+Keyframe `at` values must be distinct and within 0–1; values outside the authored
+range clamp to its endpoints. At least two frames are required. Paths must be
+single closed contours with corresponding start points and matching winding.
+Equal vertex counts interpolate corresponding vertices directly. Different
+counts are resampled along their perimeters while preserving authored corners;
+curves are flattened once at normalized tolerance 0.002. SVG groups, transforms,
+multiple contours, fills and strokes are not imported. Bake transforms into path
+data before use. Invalid keyframes clear the cached path and `setSource` returns
+false. Editing the source tree and applying the layout refreshes the cache.
 
 ```xml
 <LinearSlider name="gain" x="20" y="100" width="24" height="110" textBox="none">

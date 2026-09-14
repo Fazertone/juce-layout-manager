@@ -30,6 +30,7 @@
 
 // 2. Include your internal headers
 #include "internal/Effects.h"
+#include "internal/SvgInterpolator.h"
 #include "internal/Controls.h"
 #include "internal/LayoutManager.h"
 #include "internal/LMLookAndFeel.h"

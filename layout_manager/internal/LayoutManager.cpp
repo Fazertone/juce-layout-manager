@@ -1266,6 +1266,7 @@ void LayoutManager::setRotarySliderLayout(juce::Component* component, const juce
     juce::ValueTree sliderValueText = findChildByName("slider_value_text", elementData);
 
     laf->sliderWidgetStyle = sliderWidget;
+    laf->svgInterpolator.setSource (sliderWidget.getChildWithName ("SvgInterpolator"));
     laf->symbolEffects.setSource (sliderWidget, "symbol");
     laf->trackEffects.setSource (sliderWidget, "track");
     laf->thumbEffects.setSource (sliderWidget, "thumb");
