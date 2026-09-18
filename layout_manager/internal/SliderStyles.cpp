@@ -106,7 +106,11 @@ bool LMLookAndFeel::drawSymbolSlider (juce::Graphics& g, float position)
     else if (style == "svgMorph")
     {
         symbol = svgInterpolator.createPath (position);
-        symbol.applyTransform (juce::AffineTransform::scale (r).translated (centre.x, centre.y));
+        const auto rotation = juce::jmap (position, number (sliderWidgetStyle, "rotationStart", 0.0f),
+                                                   number (sliderWidgetStyle, "rotationEnd", 0.0f));
+        symbol.applyTransform (juce::AffineTransform::scale (r)
+                                   .rotated (juce::degreesToRadians (rotation))
+                                   .translated (centre.x, centre.y));
     }
     else if (style == "jaggedRing")
     {

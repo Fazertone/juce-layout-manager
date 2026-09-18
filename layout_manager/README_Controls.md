@@ -101,6 +101,10 @@ Copy SVG path `d` and `viewBox` attributes directly into `Path` keyframes.
 The viewBox centre becomes the origin and its largest dimension maps to 2 units;
 optional `scale` defaults to 1. Circle radii use those normalized units. The
 slider then scales the result by `symbolRadius` times its backplate radius.
+Optional `SliderWidget` attributes `rotationStart` and `rotationEnd` interpolate
+clockwise rotation in degrees around the symbol centre as the slider moves from
+minimum to maximum. Both default to 0; use `rotationStart="-180" rotationEnd="0"`
+to twist half a turn into the original SVG orientation at maximum.
 Colours, strokes and glow come from the widget, allowing the same shape data to
 use any theme. Embedded path data works with bundled XML without asset files.
 
