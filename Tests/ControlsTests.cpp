@@ -186,6 +186,26 @@ public:
         expectEquals (graph.getValues()[LMAhdsrComponent::attack], 0.0f);
         expectEquals (graph.getValues()[LMAhdsrComponent::hold], 5000.0f);
         expectEquals (graph.getValues()[LMAhdsrComponent::sustain], 1.0f);
+
+        beginTest ("AHDSR fixed time axis never rescales and drags through the range skew");
+        juce::ValueTree fixedStyle ("AHDSR");
+        fixedStyle.setProperty ("timeAxis", "fixed", nullptr);
+        graph.setStyle (fixedStyle, 1.0f);
+        graph.setValues ({ 10, 0, 200, 0.5f, 2000 });
+        const auto before = graph.getHandlePositions();
+        graph.setValue (LMAhdsrComponent::release, 50);
+        const auto after = graph.getHandlePositions();
+        for (int stage = 0; stage < LMAhdsrComponent::release; ++stage)
+            expect (after[(size_t) stage] == before[(size_t) stage], "Other stages keep their positions");
+        expect (after[LMAhdsrComponent::release].x < before[LMAhdsrComponent::release].x);
+        expect (after[LMAhdsrComponent::release].x - after[LMAhdsrComponent::sustain].x > 5.0f,
+                "Short times keep usable width on the skewed range");
+        graph.mouseDown (controlEvent (graph, after[LMAhdsrComponent::release]));
+        graph.mouseDrag (controlEvent (graph, after[LMAhdsrComponent::release].translated (10, 0)));
+        expect (graph.getValues()[LMAhdsrComponent::release] > 50);
+        graph.cancelGesture();
+        graph.setValues ({ 5000, 5000, 5000, 1, 5000 });
+        expect (graph.getHandlePositions()[LMAhdsrComponent::release].x <= (float) graph.getWidth());
     }
 };
 ControlsTests controlsTests;

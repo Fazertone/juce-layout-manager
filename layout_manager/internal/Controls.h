@@ -60,6 +60,9 @@ public:
 private:
     juce::Rectangle<float> plotBounds() const;
     float timeScale() const;
+    bool hasFixedTimeAxis() const;
+    float stageWidth() const;
+    float timeOffset (Stage) const;
     std::array<juce::Point<float>, stageCount> endpoints() const;
     void editValue (Stage, float);
     float number (const char*, float) const;

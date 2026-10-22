@@ -213,17 +213,40 @@ float LMAhdsrComponent::timeScale() const
     return plotBounds().getWidth() * (1.0f - fraction) / juce::jmax (number ("minimumTimeSpan", 100), total);
 }
 
+// timeAxis="fixed": each time stage owns a quarter of the time width and is
+// placed through its range's normalisation (skew), so the scale never changes
+// with the values and short times keep usable resolution.
+bool LMAhdsrComponent::hasFixedTimeAxis() const
+{
+    return style.getProperty ("timeAxis", "fit").toString() == "fixed";
+}
+
+float LMAhdsrComponent::stageWidth() const
+{
+    const auto fraction = juce::jlimit (0.05f, 0.8f, number ("sustainWidth", 0.2f));
+    return plotBounds().getWidth() * (1.0f - fraction) / 4.0f;
+}
+
+float LMAhdsrComponent::timeOffset (Stage stage) const
+{
+    if (hasFixedTimeAxis())
+    {
+        const auto& range = ranges[(size_t) stage];
+        return range.convertTo0to1 (juce::jlimit (range.start, range.end, values[(size_t) stage])) * stageWidth();
+    }
+    return values[(size_t) stage] * timeScale();
+}
+
 std::array<juce::Point<float>, LMAhdsrComponent::stageCount> LMAhdsrComponent::endpoints() const
 {
     const auto plot = plotBounds();
-    const auto unit = timeScale();
     const auto peak = plot.getY() + number ("peakInset", 0) * scale;
     const auto level = plot.getBottom() - values[sustain] * (plot.getBottom() - peak);
-    const auto a = plot.getX() + values[attack] * unit;
-    const auto h = a + values[hold] * unit;
-    const auto d = h + values[decay] * unit;
+    const auto a = plot.getX() + timeOffset (attack);
+    const auto h = a + timeOffset (hold);
+    const auto d = h + timeOffset (decay);
     const auto s = d + plot.getWidth() * juce::jlimit (0.05f, 0.8f, number ("sustainWidth", 0.2f));
-    return {{ { a, peak }, { h, peak }, { d, level }, { s, level }, { s + values[release] * unit, plot.getBottom() } }};
+    return {{ { a, peak }, { h, peak }, { d, level }, { s, level }, { s + timeOffset (release), plot.getBottom() } }};
 }
 
 std::array<juce::Point<float>, LMAhdsrComponent::stageCount> LMAhdsrComponent::getHandlePositions() const
@@ -333,7 +356,13 @@ void LMAhdsrComponent::mouseDrag (const juce::MouseEvent& event)
 {
     if (activeHandle < 0) return;
     const auto delta = event.position - dragOrigin;
-    if (activeHandle != sustain)
+    if (activeHandle != sustain && hasFixedTimeAxis())
+    {
+        const auto& range = ranges[(size_t) activeHandle];
+        const auto start = range.convertTo0to1 (juce::jlimit (range.start, range.end, dragValues[(size_t) activeHandle]));
+        editValue ((Stage) activeHandle, range.convertFrom0to1 (juce::jlimit (0.0f, 1.0f, start + delta.x / juce::jmax (1.0f, stageWidth()))));
+    }
+    else if (activeHandle != sustain)
         editValue ((Stage) activeHandle, dragValues[(size_t) activeHandle] + delta.x / juce::jmax (0.001f, frozenTimeScale));
     if (activeHandle == sustain || activeHandle == decay)
         editValue (sustain, dragValues[sustain] - delta.y / juce::jmax (1.0f, plotBounds().getHeight() - number ("peakInset", 0) * scale));

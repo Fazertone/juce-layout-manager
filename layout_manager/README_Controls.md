@@ -173,6 +173,10 @@ itself does not depend on APVTS or a processor.
 - Stage widths show relative linear duration. The sustain preview occupies
   `sustainWidth` of the plot, not a timed sustain parameter. `minimumTimeSpan`
   prevents an unusable scale when all times are near zero.
+- `timeAxis="fixed"` replaces the fitted scale with a static one: attack,
+  hold, decay and release each own a quarter of the non-sustain width and are
+  placed through their range's normalisation (so a skewed range gives short
+  times more room). Editing one stage never rescales the others.
 - The time scale is frozen during dragging and fitted again at gesture end.
   `peakInset` reserves headroom within the plot. Overlapping handles are offset
   with connectors, preserving access to zero-duration stages.
