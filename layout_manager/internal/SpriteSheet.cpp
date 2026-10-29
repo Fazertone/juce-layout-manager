@@ -137,7 +137,18 @@ bool SpriteSheetCollection::loadFromXml (const juce::File& xmlFile)
         sprite.edgeBlur  = child->getIntAttribute ("edgeblur", 0);
 
         // Optional named state frames (tooling *_src attributes are ignored).
-        for (const auto* state : { "off", "pressed", "on" })
+        // `states` lists the state attributes to read, e.g.
+        // states="off,pressed,on,disabled"; without it, the classic three.
+        juce::StringArray stateNames { "off", "pressed", "on" };
+        if (child->hasAttribute ("states"))
+        {
+            stateNames.addTokens (child->getStringAttribute ("states"), ",", {});
+            stateNames.trim();
+            stateNames.removeEmptyStrings();
+            stateNames.removeDuplicates (false);
+        }
+
+        for (const auto& state : stateNames)
             if (child->hasAttribute (state))
                 sprite.stateFrames[state] = child->getIntAttribute (state);
 
@@ -224,11 +235,22 @@ void SpriteSwitchComponent::paintButton (juce::Graphics& g, bool shouldDrawButto
     if (sprite == nullptr || ! sprite->isValid())
         return;
 
-    int frame;
-    if (shouldDrawButtonAsDown)
-        frame = sprite->getStateFrame ("pressed", 0);
-    else
-        frame = sprite->getStateFrame (getToggleState() ? "on" : "off", 0);
-
+    const int frame = sprite->getStateFrame (getStateName (shouldDrawButtonAsDown), 0);
     sprite->drawFrame (g, frame, getLocalBounds().toFloat());
+}
+
+juce::String SpriteSwitchComponent::getStateName (bool isDown) const
+{
+    const juce::String toggleState = getToggleState() ? "on" : "off";
+
+    // Disabled art is optional: sprites without it keep drawing on/off.
+    if (! isEnabled())
+    {
+        if (sprite->hasState ("disabled_" + toggleState))
+            return "disabled_" + toggleState;
+        if (sprite->hasState ("disabled"))
+            return "disabled";
+    }
+
+    return isDown ? "pressed" : toggleState;
 }

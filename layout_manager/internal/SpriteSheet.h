@@ -6,7 +6,8 @@
 /**
     A single named sprite: one frame strip/grid image plus its on-screen
     placement (in background-image coordinate space) and optional named
-    state -> frame mappings (e.g. "off" -> 0, "pressed" -> 1, "on" -> 2).
+    state -> frame mappings (e.g. "off" -> 0, "pressed" -> 1, "on" -> 2,
+    "disabled" -> 3). State names are arbitrary; see the `states` XML attribute.
 */
 class Sprite
 {
@@ -15,13 +16,14 @@ public:
     juce::Image image;                          // the frame strip/grid
     int columns = 1, rows = 1;
     juce::Rectangle<int> placement;             // x/y/w/h in background-image space
-    std::map<juce::String, int> stateFrames;    // "off"->0, "pressed"->1, "on"->2
+    std::map<juce::String, int> stateFrames;    // "off"->0, "pressed"->1, "on"->2, ...
     int edgeBlur = 0;   // linear alpha feather width at the frame border, in
                         // background-image (source) pixels. 0 = no feather. Hides
                         // the hard rectangular seam of opaque JPG frames.
 
     int getNumFrames() const noexcept                        { return columns * rows; }
     int getStateFrame (const juce::String& state, int fallback = 0) const;
+    bool hasState (const juce::String& state) const          { return stateFrames.count (state) > 0; }
 
     // Cell bounds for a frame, computed so rounding error never accumulates
     // across cells (fixes the whole-pixel-only limitation of the old sprite LAF).
@@ -80,8 +82,12 @@ private:
 //==============================================================================
 /**
     A button that renders itself from a Sprite frame strip using named states
-    ("pressed" while held, otherwise "on"/"off" from the toggle state). Works
-    with a plain juce::AudioProcessorValueTreeState::ButtonAttachment.
+    ("pressed" while held, otherwise "on"/"off" from the toggle state). When the
+    button is disabled it shows "disabled_on"/"disabled_off" (matching the
+    toggle state) or "disabled", if the sprite defines them. Works with a plain
+    juce::AudioProcessorValueTreeState::ButtonAttachment.
+
+    Override getStateName() to drive other custom states from the host.
 */
 class SpriteSwitchComponent : public juce::Button
 {
@@ -93,6 +99,10 @@ public:
 
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted,
                       bool shouldDrawButtonAsDown) override;
+
+protected:
+    // Name of the sprite state to draw. Only called with a valid sprite.
+    virtual juce::String getStateName (bool isDown) const;
 
 private:
     const Sprite* sprite = nullptr;   // non-owning

@@ -22,11 +22,12 @@ One named control's data:
 | `image` | the frame strip/grid (loaded via `ImageCache`) |
 | `columns`, `rows` | grid layout of frames within `image` |
 | `placement` | `Rectangle<int>` x/y/w/h in *background-image* space |
-| `stateFrames` | optional `"off"/"pressed"/"on"` → frame index map (switches) |
+| `stateFrames` | optional state name → frame index map (switches): `"off"/"pressed"/"on"` plus any names listed in `states` (e.g. `"disabled"`) |
 
 Key methods:
 - `getNumFrames()` → `columns * rows`.
 - `getStateFrame(state, fallback)` → frame index for a named state.
+- `hasState(state)` → whether the sprite defines that state.
 - `getFrameBounds(frameIndex)` → source rectangle for a frame. Cell edges are
   computed independently as `round(k * dim / count)` for `k` and `k+1`, so
   rounding error never accumulates across cells. This fixes the whole-pixel-only
@@ -72,6 +73,12 @@ A rotary slider that paints itself from a `Sprite` strip.
 A button that paints itself from a `Sprite` strip using named states.
 - `setSprite(const Sprite*)` / `getSprite()`.
 - While held → `"pressed"` frame; otherwise `getToggleState() ? "on" : "off"`.
+- While disabled (`setEnabled(false)`) → `"disabled_on"` / `"disabled_off"`
+  (matching the toggle state) if the sprite has it, else `"disabled"`, else the
+  normal on/off frame. JUCE repaints buttons on enablement changes, so hosts
+  only need to call `setEnabled`.
+- Custom states: subclass and override the protected virtual
+  `getStateName(isDown)` to return any state name the sprite defines.
 - Works with `ButtonAttachment`, radio groups, and `ParameterAttachment`
   because it *is* a `juce::Button`.
 
@@ -113,6 +120,10 @@ Attributes:
   frame dissolves into whatever is behind it (hides lighting/shadow seams at the
   sprite rectangle). Applied per-frame in `drawFrame`; 0 = plain blit.
 - `off` / `pressed` / `on` — optional state→frame indices for switches.
+- `states` — optional comma-separated list of state attributes to read, for
+  arbitrary states beyond the classic three, e.g.
+  `states="off,pressed,on,disabled" ... disabled="3"` with `rows="4"`.
+  Without it only `off` / `pressed` / `on` are read.
 - `*_src` and other attributes are ignored (tooling metadata).
 
 ## Consuming pattern (host component)
