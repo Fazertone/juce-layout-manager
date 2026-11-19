@@ -1038,6 +1038,44 @@ void LayoutManager::setTextEditorLayout(juce::Component* component, const juce::
     textEditor->setTextToShowWhenEmpty(placeholderText, placeholderColour);
     textEditor->setColour(juce::CaretComponent::caretColourId, textColour);
 
+    // Right-click menu (Cut/Copy/Paste): rounded dark menu in the entry font. popupStyle names
+    // an element anywhere in the layout whose attributes override the defaults below.
+    {
+        const auto styleNode = elementData.hasProperty("popupStyle")
+                                   ? findComponentByName(elementData.getProperty("popupStyle").toString(), layoutTree)
+                                   : juce::ValueTree();
+        const auto get = [&styleNode](const char* key, const juce::var& fallback)
+        {
+            return styleNode.isValid() ? styleNode.getProperty(key, fallback) : fallback;
+        };
+        const auto colour = [&get](const char* key, const char* fallback)
+        {
+            return juce::Colour::fromString(get(key, fallback).toString());
+        };
+        const auto size = [&get, this](const char* key, float fallback)
+        {
+            return static_cast<float>(get(key, fallback)) * scaling;
+        };
+
+        LMLookAndFeel::PopupMenuStyle style;
+        if (styleNode.isValid() && (styleNode.hasProperty("fontName") || styleNode.hasProperty("fontSize")))
+            style.font = createFontFromElement(styleNode);
+        else if (txtBoxEntry.isValid())
+            style.font = createFontFromElement(txtBoxEntry);
+        else
+            style.font = textEditor->getFont();
+        style.backgroundColour = colour("popupBackgroundColour", "#ff101010");
+        style.outlineColour = colour("popupOutlineColour", "#80696969");
+        style.textColour = colour("textColour", "#ffd9d9d9");
+        style.highlightColour = colour("highlightColour", "#ff424141");
+        style.strokeWidth = size("popupStrokeWidth", 0.25f);
+        style.padding = size("popupPadding", 1.0f);
+        style.cornerRadius = size("popupCornerRadius", 2.25f);
+        style.textInset = size("popupTextInset", 3.0f);
+        style.itemHeight = size("popupItemHeight", 0.0f);
+        laf->setPopupMenuStyle(style);
+    }
+
     // Apply the custom LookAndFeel to the text editor
     textEditor->setLookAndFeel(laf);
 }

@@ -28,6 +28,22 @@ same font configuration as labels.
 `TextEditor` corner radii are in layout units and scale with its bounds. A
 20-unit-high field with `cornerRadius="10"` remains a pill at every scale.
 
+A `TextEditor`'s right-click menu (Cut/Copy/Paste) is a rounded dark menu in the
+`text_editor_entry` font, scaled with the editor like the field it opens from.
+To restyle it, set `popupStyle` to the name of any element in the layout; these
+attributes on that element override the defaults (sizes in layout units):
+
+| Attribute | Default |
+|---|---|
+| `fontName`, `fontSize`, `fontType` | the `text_editor_entry` font |
+| `textColour` / `highlightColour` | `#ffd9d9d9` / `#ff424141` |
+| `popupBackgroundColour` / `popupOutlineColour` | `#ff101010` / `#80696969` |
+| `popupStrokeWidth`, `popupPadding`, `popupCornerRadius` | 0.25, 1, 2.25 |
+| `popupTextInset`, `popupItemHeight` | 3, 1.7 × font height |
+
+The names match Pressure's selector styles, so a field can share one
+(`popupStyle="settings_selector_style"`).
+
 ## Sliders
 
 Use `juce::Slider` for the standard interaction model, or `LMSlider` for on-demand

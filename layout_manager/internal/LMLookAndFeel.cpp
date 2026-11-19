@@ -387,7 +387,127 @@ void LMLookAndFeel::drawPopupMenuItem (juce::Graphics& g, const juce::Rectangle<
 
 juce::Font LMLookAndFeel::getPopupMenuFont()
 {
+    if (popupMenuStyle)
+        return popupMenuStyle->font;
     return comboBoxFont.withPointHeight (comboBoxFontHeight);
+}
+
+void LMLookAndFeel::setPopupMenuStyle (const PopupMenuStyle& style)
+{
+    popupMenuStyle = style;
+    // Transparent window so the rounded corners show; the fill is drawn in the background.
+    setColour (juce::PopupMenu::backgroundColourId, juce::Colours::transparentBlack);
+    setColour (juce::PopupMenu::textColourId, style.textColour);
+    setColour (juce::PopupMenu::highlightedBackgroundColourId, style.highlightColour);
+    setColour (juce::PopupMenu::highlightedTextColourId, style.textColour);
+}
+
+int LMLookAndFeel::getPopupMenuBorderSizeWithOptions (const juce::PopupMenu::Options& options)
+{
+    if (! popupMenuStyle)
+        return LookAndFeel_V4::getPopupMenuBorderSizeWithOptions (options);
+    return juce::jmax (1, juce::roundToInt (popupMenuStyle->padding));
+}
+
+void LMLookAndFeel::drawPopupMenuBackgroundWithOptions (juce::Graphics& g, int width, int height,
+                                                        const juce::PopupMenu::Options& options)
+{
+    if (! popupMenuStyle)
+        return LookAndFeel_V4::drawPopupMenuBackgroundWithOptions (g, width, height, options);
+
+    const auto& s = *popupMenuStyle;
+    const auto bounds = juce::Rectangle<float> ((float) width, (float) height).reduced (s.strokeWidth * 0.5f);
+    g.setColour (s.backgroundColour);
+    g.fillRoundedRectangle (bounds, s.cornerRadius);
+    if (s.strokeWidth > 0.0f)
+    {
+        g.setColour (s.outlineColour);
+        g.drawRoundedRectangle (bounds, s.cornerRadius, s.strokeWidth);
+    }
+}
+
+void LMLookAndFeel::getIdealPopupMenuItemSizeWithOptions (const juce::String& text, bool isSeparator,
+                                                          int standardItemHeight, int& idealWidth, int& idealHeight,
+                                                          const juce::PopupMenu::Options& options)
+{
+    if (! popupMenuStyle)
+        return LookAndFeel_V4::getIdealPopupMenuItemSizeWithOptions (text, isSeparator, standardItemHeight,
+                                                                    idealWidth, idealHeight, options);
+
+    const auto& s = *popupMenuStyle;
+    if (isSeparator)
+    {
+        idealWidth = 1;
+        idealHeight = juce::roundToInt (s.padding) * 2 + 1;
+        return;
+    }
+    const auto font = getPopupMenuFont();
+    idealHeight = juce::roundToInt (s.itemHeight > 0.0f ? s.itemHeight : font.getHeight() * 1.7f);
+    idealWidth = juce::roundToInt (std::ceil (juce::GlyphArrangement::getStringWidth (font, text)
+                                              + s.textInset * 2.0f + font.getHeight() * 2.0f));
+}
+
+void LMLookAndFeel::drawPopupMenuItemWithOptions (juce::Graphics& g, const juce::Rectangle<int>& area,
+                                                  bool isHighlighted, const juce::PopupMenu::Item& item,
+                                                  const juce::PopupMenu::Options& options)
+{
+    if (! popupMenuStyle)
+        return LookAndFeel_V4::drawPopupMenuItemWithOptions (g, area, isHighlighted, item, options);
+
+    const auto& s = *popupMenuStyle;
+    // Items span the full menu width; inset by the border so every edge gets the same margin.
+    const auto padding = (float) juce::roundToInt (s.padding);
+    auto bounds = area.toFloat().reduced (padding, 0.0f);
+
+    if (item.isSeparator)
+    {
+        g.setColour (s.outlineColour);
+        g.fillRect (bounds.withSizeKeepingCentre (bounds.getWidth(), juce::jmax (1.0f, s.strokeWidth)));
+        return;
+    }
+
+    if (isHighlighted && item.isEnabled)
+    {
+        g.setColour (s.highlightColour);
+        g.fillRoundedRectangle (bounds, juce::jmax (0.0f, s.cornerRadius - padding));
+    }
+
+    const auto font = getPopupMenuFont();
+    const auto colour = item.colour.isTransparent() ? s.textColour : item.colour;
+    g.setColour (colour.withMultipliedAlpha (item.isEnabled ? 1.0f : 0.4f));
+    g.setFont (font);
+    bounds.reduce (s.textInset, 0.0f);
+
+    if (item.isTicked || item.subMenu != nullptr)
+    {
+        const auto markWidth = font.getHeight() * 0.6f;
+        const auto mark = bounds.removeFromRight (markWidth).withSizeKeepingCentre (markWidth, markWidth * 0.75f);
+        juce::Path path;
+        if (item.isTicked)
+        {
+            path.startNewSubPath (mark.getRelativePoint (0.0f, 0.55f));
+            path.lineTo (mark.getRelativePoint (0.36f, 1.0f));
+            path.lineTo (mark.getRelativePoint (1.0f, 0.0f));
+        }
+        else
+        {
+            path.startNewSubPath (mark.getRelativePoint (0.35f, 0.0f));
+            path.lineTo (mark.getRelativePoint (0.75f, 0.5f));
+            path.lineTo (mark.getRelativePoint (0.35f, 1.0f));
+        }
+        g.strokePath (path, juce::PathStrokeType (font.getHeight() * 0.08f, juce::PathStrokeType::curved,
+                                                  juce::PathStrokeType::rounded));
+        bounds.removeFromRight (s.textInset);
+    }
+
+    if (item.shortcutKeyDescription.isNotEmpty())
+    {
+        g.setColour (colour.withMultipliedAlpha (item.isEnabled ? 0.6f : 0.3f));
+        g.drawText (item.shortcutKeyDescription, bounds, juce::Justification::centredRight, true);
+        g.setColour (colour.withMultipliedAlpha (item.isEnabled ? 1.0f : 0.4f));
+    }
+
+    g.drawText (item.text, bounds, juce::Justification::centredLeft, true);
 }
 
 // -------------------------------------------------------------

@@ -73,6 +73,30 @@ public:
                             const juce::Drawable* icon, const juce::Colour* textColourToUse) override;
     juce::Font getPopupMenuFont() override;
 
+    // Rounded dark menu (TextEditor right-click menus). Sizes are layout pixels, i.e.
+    // design units × LayoutManager::scaling; the menu window then scales with the
+    // editor's transform, like the component it was opened from.
+    struct PopupMenuStyle
+    {
+        juce::Font font { juce::FontOptions {} };
+        juce::Colour backgroundColour { 0xff101010 };
+        juce::Colour outlineColour { 0x80696969 };
+        juce::Colour textColour { 0xffd9d9d9 };
+        juce::Colour highlightColour { 0xff424141 };
+        float strokeWidth = 0.25f, padding = 1.0f, cornerRadius = 2.25f, textInset = 3.0f, itemHeight = 0.0f;
+    };
+    /** Draws every menu this look and feel shows with the given style. */
+    void setPopupMenuStyle (const PopupMenuStyle& style);
+
+    int getPopupMenuBorderSizeWithOptions (const juce::PopupMenu::Options&) override;
+    void drawPopupMenuBackgroundWithOptions (juce::Graphics&, int width, int height,
+                                             const juce::PopupMenu::Options&) override;
+    void getIdealPopupMenuItemSizeWithOptions (const juce::String& text, bool isSeparator, int standardItemHeight,
+                                               int& idealWidth, int& idealHeight,
+                                               const juce::PopupMenu::Options&) override;
+    void drawPopupMenuItemWithOptions (juce::Graphics&, const juce::Rectangle<int>& area, bool isHighlighted,
+                                       const juce::PopupMenu::Item&, const juce::PopupMenu::Options&) override;
+
     // TabbedButtonBar customization methods
     void createTabTextLayout (const juce::TabBarButton& button, float length, float depth,
                               juce::Colour colour, juce::TextLayout& textLayout);
@@ -129,6 +153,8 @@ private:
     juce::Colour textEditorFillColour = juce::Colours::transparentBlack;
     bool textEditorHasStroke = false;
     bool textEditorHasFill = false;
+
+    std::optional<PopupMenuStyle> popupMenuStyle;
 
     // RotarySlider styling - circle with stroke and fill, arc with color and fill up to slider position
     // if stroke width is 0, then no stroke
