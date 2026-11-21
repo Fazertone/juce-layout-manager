@@ -6,6 +6,14 @@ class LMLookAndFeel;
 
 juce::ValueTree findComponentByName(const juce::String& componentName, const juce::ValueTree& tree);
 
+// What a paint pass is drawing for: element states (state="on" etc.) and the
+// value angle of the control that owns the subtree (radians, clockwise).
+struct LMPaintContext
+{
+    juce::StringArray states;
+    float valueAngle = 0.0f;
+};
+
 class RegisteredComponent {
 public:
     RegisteredComponent(juce::Component* component, juce::String name);
@@ -59,6 +67,16 @@ public:
     void setComboBoxLayout(juce::Component* component, const juce::ValueTree& elementData);
     void setRotarySliderLayout(juce::Component* component, const juce::ValueTree& elementData);
     void paintComponent(juce::Graphics& g, juce::String componentID);
+    void paintComponent (juce::Graphics&, const juce::String& componentID, const LMPaintContext&);
+    // Paints the painted children of an element (recursing into Groups).
+    void paintChildren (juce::Graphics&, const juce::ValueTree& node, const LMPaintContext& = {});
+    // Paints one element (Rectangle, Ellipse, Line, AutoLabel, Group, Ticks,
+    // ConicStripes); other types are ignored.
+    void paintElement (juce::Graphics&, const juce::ValueTree& node, const LMPaintContext& = {});
+    static bool stateMatches (const juce::ValueTree& node, const juce::StringArray& states);
+    // Fill gradient of a Rectangle/Ellipse in rect (pixels), if it has one.
+    std::optional<juce::ColourGradient> createFillGradient (const juce::ValueTree& node,
+                                                            juce::Rectangle<float> rect, float opacity) const;
     // Load layout from XML file
     bool loadFromFile(const juce::String& xmlFilePath);
     
@@ -127,6 +145,10 @@ private:
     void paintEllipse (juce::Graphics&, const juce::ValueTree&);
     void paintLine(juce::Graphics& g, const juce::ValueTree& lineData);
     void paintAutoLabel(juce::Graphics& g, const juce::ValueTree& labelData);
+    void paintGroup (juce::Graphics&, const juce::ValueTree&, const LMPaintContext&);
+    void paintTicks (juce::Graphics&, const juce::ValueTree&);
+    void paintConicStripes (juce::Graphics&, const juce::ValueTree&);
+    static bool hasEffects (const juce::ValueTree&);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LayoutManager)
 };

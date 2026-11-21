@@ -21,6 +21,7 @@
 #pragma once
 
 // 1. Include necessary JUCE modules
+#include <optional>
 #include <juce_graphics/juce_graphics.h>
 #include <juce_data_structures/juce_data_structures.h>
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -33,6 +34,7 @@
 #include "internal/SvgInterpolator.h"
 #include "internal/Controls.h"
 #include "internal/LayoutManager.h"
+#include "internal/Primitives.h"
 #include "internal/LMLookAndFeel.h"
 #include "internal/CustomComponents.h"
 #include "internal/Inspector.h"

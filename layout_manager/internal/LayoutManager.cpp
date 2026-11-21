@@ -464,6 +464,12 @@ void LayoutManager::applyLayout(){
         } else if (elementType == "SvgButton") {
             if (auto* button = dynamic_cast<LMSvgButton*> (registeredComponents[i].component))
                 button->setStyle (elementData, assetsFolder, scaling);
+        } else if (elementType == "LayeredKnob") {
+            if (auto* knob = dynamic_cast<LMLayeredKnob*> (registeredComponents[i].component))
+                knob->setStyle (*this, elementData);
+        } else if (elementType == "StateButton") {
+            if (auto* button = dynamic_cast<LMStateButton*> (registeredComponents[i].component))
+                button->setStyle (*this, elementData);
         } else if (elementType == "AHDSR") {
             if (auto* envelope = dynamic_cast<LMAhdsrComponent*> (registeredComponents[i].component))
                 envelope->setStyle (elementData, scaling);
@@ -1392,30 +1398,7 @@ void LayoutManager::setRotarySliderLayout(juce::Component* component, const juce
 
 
 void LayoutManager::paintComponent(juce::Graphics& g, juce::String componentID){
-    juce::ValueTree elementData = findChildByName(componentID, layoutTree);
-    
-    if (!elementData.isValid())
-        return;
-    
-    // Iterate through immediate children of elementData
-    for (int i = 0; i < elementData.getNumChildren(); ++i)
-    {
-        juce::ValueTree child = elementData.getChild(i);
-        juce::String childType = child.getType().toString();
-        
-        if (childType == "Rectangle" || childType == "Ellipse")
-        {
-            paintShape (g, child);
-        }
-        else if (childType == "Line")
-        {
-            paintLine(g, child);
-        }
-        else if (childType == "AutoLabel")
-        {
-            paintAutoLabel(g, child);
-        }
-    }
+    paintComponent (g, componentID, LMPaintContext {});
 }
 
 void LayoutManager::paintShapeContents (juce::Graphics& g, const juce::ValueTree& node)
@@ -1520,74 +1503,17 @@ void LayoutManager::paintRectangle(juce::Graphics& g, const juce::ValueTree& rec
     else if (rectData.hasProperty ("strokeColour"))
         effectsFor (rectData).render (g, shape, juce::PathStrokeType (
             (float) rectData.getProperty ("strokeWeight", 1.0f) * scaling), scaling, opacity);
+    else if (hasEffects (rectData))
+        effectsFor (rectData).render (g, shape, scaling, opacity); // shadow-only shape
 
     // Check for gradient fill
-    if (rectData.hasProperty("fill-gradient-type"))
+    if (auto gradient = createFillGradient (rectData, rect, opacity))
     {
-        juce::String gradientType = rectData.getProperty("fill-gradient-type").toString();
-        
-        if ((gradientType == "linear" || gradientType == "radial") && rectData.hasProperty("fill-gradient-stops"))
-        {
-            // Parse gradient start and end points (relative coordinates 0-1)
-            juce::String startStr = rectData.getProperty("fill-gradient-start", "0.5,0").toString();
-            juce::String endStr = rectData.getProperty("fill-gradient-end", "0.5,1").toString();
-            
-            juce::StringArray startParts = juce::StringArray::fromTokens(startStr, ",", "");
-            juce::StringArray endParts = juce::StringArray::fromTokens(endStr, ",", "");
-            
-            float startX = startParts[0].getFloatValue();
-            float startY = startParts[1].getFloatValue();
-            float endX = endParts[0].getFloatValue();
-            float endY = endParts[1].getFloatValue();
-            
-            // Flip Y coordinates (1.0 - y) to fix upside-down gradients
-            startY = 1.0f - startY;
-            endY = 1.0f - endY;
-            
-            // Convert relative coordinates to absolute
-            juce::Point<float> gradStart(x + width * startX, y + height * startY);
-            juce::Point<float> gradEnd(x + width * endX, y + height * endY);
-            
-            // Parse gradient stops
-            juce::String stopsStr = rectData.getProperty("fill-gradient-stops").toString();
-            juce::StringArray stops = juce::StringArray::fromTokens(stopsStr, ",", "");
-            
-            if (stops.size() >= 2)
-            {
-                // Parse first and last stops
-                juce::StringArray firstStop = juce::StringArray::fromTokens(stops[0], ":", "");
-                juce::StringArray lastStop = juce::StringArray::fromTokens(stops[stops.size()-1], ":", "");
-                
-                juce::Colour colour1 = juce::Colour::fromString(firstStop[0]);
-                juce::Colour colour2 = juce::Colour::fromString(lastStop[0]);
-                
-                // Apply opacity to gradient colors
-                colour1 = colour1.withAlpha(colour1.getFloatAlpha() * opacity);
-                colour2 = colour2.withAlpha(colour2.getFloatAlpha() * opacity);
-                
-                juce::ColourGradient gradient(colour1, gradStart, colour2, gradEnd, gradientType == "radial");
-                
-                // Add intermediate stops if present
-                for (int i = 1; i < stops.size() - 1; ++i)
-                {
-                    juce::StringArray stopParts = juce::StringArray::fromTokens(stops[i], ":", "");
-                    if (stopParts.size() >= 2)
-                    {
-                        juce::Colour stopColour = juce::Colour::fromString(stopParts[0]);
-                        stopColour = stopColour.withAlpha(stopColour.getFloatAlpha() * opacity);
-                        double position = stopParts[1].getDoubleValue();
-                        gradient.addColour(position, stopColour);
-                    }
-                }
-                
-                g.setGradientFill(gradient);
-                
-                if (cornerRadius > 0.0f)
-                    g.fillRoundedRectangle(rect, cornerRadius);
-                else
-                    g.fillRect(rect);
-            }
-        }
+        g.setGradientFill (*gradient);
+        if (cornerRadius > 0.0f)
+            g.fillRoundedRectangle (rect, cornerRadius);
+        else
+            g.fillRect (rect);
     }
     // Check for solid fill color
     else if (rectData.hasProperty("fillColour"))
@@ -1652,7 +1578,16 @@ void LayoutManager::paintLine(juce::Graphics& g, const juce::ValueTree& lineData
     path.startNewSubPath (line.getStart());
     path.lineTo (line.getEnd());
     effectsFor (lineData).render (g, path, juce::PathStrokeType (strokeWidth), scaling, opacity);
-    g.drawLine(line, strokeWidth);
+    const auto dashes = juce::StringArray::fromTokens (lineData.getProperty ("dashPattern", "").toString(), ", ", "");
+    if (dashes.size() >= 2)
+    {
+        juce::Array<float> pattern;
+        for (const auto& d : dashes)
+            pattern.add (juce::jmax (0.01f, d.getFloatValue() * scaling));
+        g.drawDashedLine (line, pattern.getRawDataPointer(), pattern.size(), strokeWidth);
+    }
+    else
+        g.drawLine(line, strokeWidth);
 }
 
 void LayoutManager::paintAutoLabel(juce::Graphics& g, const juce::ValueTree& labelData)
@@ -1804,15 +1739,20 @@ void LayoutManager::paintEllipse (juce::Graphics& g, const juce::ValueTree& node
     const auto stroke = juce::PathStrokeType (juce::jmax (0.0f, (float) node.getProperty ("strokeWeight", 1.0f) * scaling));
     juce::Path path;
     path.addEllipse (bounds);
-    if (node.hasProperty ("fillColour"))
+    if (node.hasProperty ("fillColour") || node.hasProperty ("fill-gradient-type"))
     {
         effectsFor (node).render (g, path, scaling, opacity);
-        g.setColour (juce::Colour::fromString (node["fillColour"].toString()).withMultipliedAlpha (opacity));
+        if (auto gradient = createFillGradient (node, bounds, opacity))
+            g.setGradientFill (*gradient);
+        else
+            g.setColour (juce::Colour::fromString (node["fillColour"].toString()).withMultipliedAlpha (opacity));
         g.fillPath (path);
         effectsFor (node).renderInner (g, path, scaling, opacity);
     }
     else if (node.hasProperty ("strokeColour"))
         effectsFor (node).render (g, path, stroke, scaling, opacity);
+    else if (hasEffects (node))
+        effectsFor (node).render (g, path, scaling, opacity); // shadow-only shape
     if (node.hasProperty ("strokeColour"))
     {
         g.setColour (juce::Colour::fromString (node["strokeColour"].toString()).withMultipliedAlpha (opacity));

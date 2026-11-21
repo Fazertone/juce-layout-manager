@@ -258,3 +258,47 @@ fall back to `circleColour`. `Effects target="circle"` applies to the unselected
 background and `Effects target="selected"` to the selected background. Leave room
 inside the component bounds for glow tails. Toggle/radio semantics and callbacks
 remain the consumer's responsibility, using the standard JUCE Button API.
+
+## Layered drawing: Group, Ticks, ConicStripes, LayeredKnob, StateButton
+
+`LayoutManager::paintChildren (g, node, context)` paints an element's painted
+children in order and recurses into `Group`s; `paintComponent` uses it, so
+these work anywhere paint-only elements do.
+
+- `Group x y scale rotation pivotX pivotY opacity rotateWithValue`: offsets,
+  zooms and rotates its children (pivot in child units). `rotateWithValue="true"`
+  adds the owning control's value angle.
+- `Ticks cx cy count startAngle endAngle outerRadius length majorEvery majorLength strokeColour strokeWeight`:
+  radial tick marks (angles in degrees, 0 = up, clockwise).
+- `ConicStripes x y width height segments colourA colourB startAngle`: a
+  knurled disc of alternating wedges.
+- Any painted element: `state="on"`, `"!on"`, `"on|over"` paints it only for
+  matching states (see the controls below). `hidden="true"` skips it.
+- `Line dashPattern="6,4"`; `Rectangle`/`Ellipse` `fill-gradient-angle="160"`
+  (CSS `linear-gradient` angle) in place of `fill-gradient-start`/`-end`;
+  `Ellipse` gradient fills; shapes with only `<Effects>` paint their shadows.
+
+Controls drawn entirely from their children:
+
+```xml
+<LayeredKnob name="gain_knob" x="0" y="0" width="200" height="200"
+             startAngle="-135" endAngle="135" dragMode="circular" hitRadius="80">
+  <Ellipse x="20" y="20" width="160" height="160" fillColour="#ffcbcac4"/>
+  <Group rotateWithValue="true" pivotX="100" pivotY="100">
+    <Rectangle x="97" y="30" width="6" height="34" cornerRadius="3" fillColour="#fff7f6f1"/>
+  </Group>
+</LayeredKnob>
+
+<StateButton name="bypass_btn" x="0" y="0" width="100" height="60" toggles="true">
+  <Group state="off"> ... </Group>
+  <Group state="on" y="4"> ... </Group>
+</StateButton>
+```
+
+`LMLayeredKnob` is a `juce::Slider` and `LMStateButton` a `juce::Button`, so
+APVTS attachments work. States: `on`/`off` (toggle state), `over`, `down`,
+`disabled`. `interactive="false"` makes a StateButton a display (an LED).
+
+Hot reload: `LMLayoutFileWatcher watcher (layout, file, [this] { /* applyResize, repaint, re-read styles */ });`
+polls the file and reloads it on change; an unparseable file is ignored until
+the next save.

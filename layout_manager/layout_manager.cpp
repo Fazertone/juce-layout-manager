@@ -10,3 +10,4 @@
 #include "internal/SpriteSheet.cpp"
 #include "internal/SliderStyles.cpp"
 #include "internal/Controls.cpp"
+#include "internal/Primitives.cpp"
